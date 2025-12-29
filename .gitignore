@@ -1,0 +1,216 @@
+# ================================
+# Pekis iOS App - .gitignore
+# Open Source Swift/SwiftUI Project
+# ================================
+
+# ---------------------------------
+# Xcode - Build Artifacts
+# ---------------------------------
+
+## Build generated
+build/
+DerivedData/
+*.build/
+*.hmap
+
+## Archives & Distribution
+*.xcarchive
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ---------------------------------
+# Xcode - User & Local Settings
+# ---------------------------------
+
+## User settings (keep these out of version control)
+xcuserdata/
+
+## Compatibility with older Xcode versions
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+## Xcode project settings users might have
+*.pbxuser
+!default.pbxuser
+
+## Miscellaneous Xcode files
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# ---------------------------------
+# Swift Package Manager
+# ---------------------------------
+
+.build/
+.swiftpm/
+Package.resolved
+
+# ---------------------------------
+# CocoaPods
+# ---------------------------------
+
+# Uncomment if you don't want to commit Pods
+# Pods/
+
+# Always ignore these
+Podfile.lock
+
+# ---------------------------------
+# Carthage
+# ---------------------------------
+
+Carthage/Build/
+Carthage/Checkouts/
+
+# ---------------------------------
+# Fastlane
+# ---------------------------------
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/README.md
+
+# ---------------------------------
+# Code Injection
+# ---------------------------------
+
+iOSInjectionProject/
+.inject.md
+
+# ---------------------------------
+# macOS System Files
+# ---------------------------------
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+*.swp
+*~
+
+# ---------------------------------
+# IDE & Editors
+# ---------------------------------
+
+## VS Code
+.vscode/
+*.code-workspace
+
+## AppCode / JetBrains
+.idea/
+
+## Vim
+*.swp
+*.swo
+
+# ---------------------------------
+# Testing & Code Coverage
+# ---------------------------------
+
+*.gcov
+*.gcda
+*.gcno
+coverage/
+*.xcresult
+TestResults/
+test_output/
+CodeCoverage/
+
+# ---------------------------------
+# Provisioning & Certificates
+# (NEVER commit these to public repos!)
+# ---------------------------------
+
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.cer
+*.pem
+
+# ---------------------------------
+# Environment & Secrets
+# (CRITICAL for open source!)
+# ---------------------------------
+
+## Environment files
+.env
+.env.*
+*.env
+.env.local
+.env.*.local
+
+## API Keys & Secrets
+Secrets.swift
+secrets.json
+secrets.plist
+APIKeys.swift
+*.secret
+Config.xcconfig
+Debug.xcconfig
+Release.xcconfig
+
+## Firebase (contains sensitive project info)
+GoogleService-Info.plist
+
+## Sentry
+sentry.properties
+
+# ---------------------------------
+# Documentation (Generated)
+# ---------------------------------
+
+docs/generated/
+Documentation/Reference/
+
+# ---------------------------------
+# Logs & Temporary Files
+# ---------------------------------
+
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+temp/
+*.crash
+crashlytics-build.properties
+
+# ---------------------------------
+# Project-Specific Ignores
+# ---------------------------------
+
+## Personal notes and drafts
+words.md
+ADMISSIONS_NARRATIVE.md
+
+## Deprecated/unused services
+Pekis/Core/Services/MatchmakingService.swift
+
+## Screenshots folder (if auto-generated)
+Screenshots/
+
+# ---------------------------------
+# Optional: Tuist / XcodeGen
+# ---------------------------------
+
+Derived/
+project.yml.user
+*.xcodeproj/xcshareddata/xcschemes/*.xcscheme
+
+# ---------------------------------
+# End of .gitignore
+# ---------------------------------

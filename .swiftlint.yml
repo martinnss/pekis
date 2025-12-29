@@ -1,0 +1,57 @@
+disabled_rules: # rule identifiers to exclude from running
+  - todo
+  - identifier_name # Sometimes short names like x, y, id are fine
+  - nesting # SwiftUI often has deep nesting
+
+opt_in_rules: # some rules are only opt-in
+  - empty_count
+  - empty_string
+  - force_unwrapping
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+
+included: # paths to include during linting. `--path` is ignored if present.
+  - Pekis
+  - PekisTests
+  - PekisUITests
+
+excluded: # paths to ignore during linting. Takes precedence over `included`.
+  - Carthage
+  - Pods
+  - DerivedData
+  - .build
+
+# configurable rules can be customized from this configuration file
+line_length:
+  warning: 140
+  error: 200
+  ignores_function_declarations: true
+  ignores_comments: true
+  ignores_urls: true
+
+function_body_length:
+  warning: 60
+  error: 100
+
+type_body_length:
+  warning: 300
+  error: 400
+
+file_length:
+  warning: 500
+  error: 1200
+
+cyclomatic_complexity:
+  warning: 10
+  error: 20
+
+force_cast: error
+force_try: error
+force_unwrapping: warning # Warn on force unwrapping, prefer optional binding
+
+trailing_whitespace:
+  ignores_empty_lines: false
+  ignores_comments: false
+
+vertical_whitespace:
+  max_empty_lines: 1
