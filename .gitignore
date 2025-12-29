@@ -196,6 +196,7 @@ crashlytics-build.properties
 ## Personal notes and drafts
 words.md
 ADMISSIONS_NARRATIVE.md
+/.github
 
 ## Deprecated/unused services
 Pekis/Core/Services/MatchmakingService.swift
