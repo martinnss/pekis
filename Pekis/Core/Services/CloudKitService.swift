@@ -36,7 +36,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
     // MARK: - Initialization
 
-    init(containerIdentifier: String = "iCloud.molivares.PekisGame") {
+    init(containerIdentifier: String = "iCloud.molivares.Pekis") {
         self.container = CKContainer(identifier: containerIdentifier)
         self.privateDatabase = container.privateCloudDatabase
     }
