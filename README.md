@@ -63,7 +63,7 @@ Pekis is built with a **"Local-First, Cloud-Sync"** philosophy.
 ### Installation
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/Pekis.git
+    git clone https://github.com/martinnss/Pekis.git
     cd Pekis
     ```
 
@@ -127,4 +127,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-*Built with ❤️ by [Your Name] for LDR couples everywhere.*
+*Built with 💜 by Martin for LDR couples everywhere.*
