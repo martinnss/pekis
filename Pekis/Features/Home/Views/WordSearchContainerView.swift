@@ -1,5 +1,4 @@
 import SwiftUI
-import Combine
 
 struct WordSearchContainerView: View {
     @ObservedObject var viewModel: WordSearchViewModel
@@ -43,8 +42,7 @@ struct WordSearchContainerView: View {
         .onAppear {
             matchmaking.join()
         }
-        .onChange(of: matchmaking.status) { newStatus in
-            print("DEBUG: Matchmaking status changed to: \(newStatus)")
+        .onChange(of: matchmaking.status) { _, newStatus in
             if newStatus == .readyToStart {
                 startCountdown()
             }
@@ -149,92 +147,22 @@ struct WordSearchContainerView: View {
     }
 
     private func startCountdown() {
-        print("DEBUG: startCountdown called")
-        guard !showCountdown else {
-            print("DEBUG: Countdown already showing, ignoring")
-            return
-        }
-
+        guard !showCountdown else { return }
         showCountdown = true
         countdown = 3
 
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            if countdown > 1 {
+        Task { @MainActor in
+            for tick in stride(from: 3, through: 1, by: -1) {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    countdown -= 1
+                    countdown = tick
                 }
-                HapticManager.selection() // Light tap for countdown
-            } else {
-                print("DEBUG: Countdown finished, starting game")
-                timer.invalidate()
-                withAnimation {
-                    matchmaking.startGame()
-                    viewModel.startGame()
-                }
+                HapticManager.selection()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+            withAnimation {
+                matchmaking.startGame()
+                viewModel.startGame()
             }
         }
-    }
-}
-
-class MatchmakingViewModel: ObservableObject {
-    @Published var status: MatchStatus = .idle
-    // Switch to GoogleAppsScriptMatchmakingService
-    private let service: MatchmakingServiceProtocol = GoogleAppsScriptMatchmakingService()
-    private var cancellables = Set<AnyCancellable>()
-    private var statusCancellable: AnyCancellable?
-
-    init() {
-        statusCancellable = service.status
-            .receive(on: RunLoop.main)
-            .assign(to: \.status, on: self)
-
-        service.opponentWon
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.handleOpponentVictory()
-            }
-            .store(in: &cancellables)
-    }
-
-    // ... existing code ...
-
-    private func handleOpponentVictory() {
-        // Notify the view that opponent won
-        opponentWonSubject.send()
-    }
-
-    let opponentWonSubject = PassthroughSubject<Void, Never>()
-
-    func join() {
-        service.joinGame()
-    }
-
-    func leave() {
-        service.leaveGame()
-    }
-
-    func startGame() {
-        // Stop listening to status updates (so we stay in .inGame)
-        statusCancellable?.cancel()
-        statusCancellable = nil
-
-        // We keep polling (service implementation detail) but we ignore its status output
-        // We keep listening to opponentWon (in cancellables)
-
-        status = .inGame
-    }
-
-    func reportVictory() {
-        service.reportVictory()
-    }
-
-    func startSinglePlayer() {
-        // Stop listening to everything
-        statusCancellable?.cancel()
-        statusCancellable = nil
-        cancellables.removeAll()
-
-        service.leaveGame()
-        status = .inGame
     }
 }

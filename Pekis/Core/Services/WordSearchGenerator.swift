@@ -58,7 +58,7 @@ enum WordSearchGenerator {
             var attempts = 0
 
             while !placed && attempts < 100 {
-                let direction = Direction.allCases.randomElement(using: &rng)!
+                guard let direction = Direction.allCases.randomElement(using: &rng) else { continue }
                 let row = Int.random(in: 0..<gridSize, using: &rng)
                 let column = Int.random(in: 0..<gridSize, using: &rng)
 

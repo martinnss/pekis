@@ -111,7 +111,7 @@ struct WordSearchResultView: View {
         case 6: return "Perfect Pekis!"
         case 4...5: return "Great Job Pekis!"
         case 1...3: return "Good Effort Pekis!"
-        default: return "Nice Try Looser!"
+        default: return "Nice Try Loser!"
         }
     }
 

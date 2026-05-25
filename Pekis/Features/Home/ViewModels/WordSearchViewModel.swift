@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import UIKit
 
+@MainActor
 final class WordSearchViewModel: ObservableObject {
     @Published private(set) var puzzle: WordSearchPuzzle = WordSearchGenerator.makePuzzle()
     @Published private(set) var foundWords: Set<String> = []
