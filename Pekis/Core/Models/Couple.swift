@@ -6,7 +6,7 @@ import CloudKit
 struct Couple: Codable, Identifiable {
     let id: String
     let partnerAIdentifier: String
-    let partnerBIdentifier: String?
+    var partnerBIdentifier: String?
     var partnerAName: String
     var partnerBName: String?
     var reunionDate: Date?
