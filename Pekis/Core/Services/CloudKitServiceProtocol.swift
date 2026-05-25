@@ -5,7 +5,6 @@ import CloudKit
 /// Enables dependency injection and testability
 @MainActor
 protocol CloudKitServiceProtocol: ObservableObject {
-
     // MARK: - State
 
     /// Current user's CloudKit identifier
@@ -16,6 +15,9 @@ protocol CloudKitServiceProtocol: ObservableObject {
 
     /// Whether the user has completed pairing with a partner
     var isPaired: Bool { get }
+
+    /// Whether Partner B needs to enter their name after accepting a share invitation
+    var needsPartnerName: Bool { get set }
 
     /// Loading state for UI feedback
     var isLoading: Bool { get }
@@ -72,6 +74,18 @@ protocol CloudKitServiceProtocol: ObservableObject {
     /// - Returns: Array of answers from both partners
     func fetchThisOrThatAnswers() async throws -> [ThisOrThatAnswer]
 
+    // MARK: - Moments
+
+    /// Save a daily photo moment to the shared zone
+    /// - Parameters:
+    ///   - imageData: JPEG-compressed image data
+    ///   - prompt: The daily prompt shown to both partners
+    func saveMoment(imageData: Data, prompt: String) async throws
+
+    /// Fetch today's moments for both partners
+    /// - Returns: Array of today's MomentShareRecord (0–2 items: one per partner)
+    func fetchTodaysMoments() async throws -> [MomentShareRecord]
+
     // MARK: - Sharing
 
     /// Get the CKShare for the couple zone (for UICloudSharingController)
@@ -82,11 +96,11 @@ protocol CloudKitServiceProtocol: ObservableObject {
 
     // MARK: - Subscriptions
 
-    /// Subscribe to changes in the shared zone for real-time updates
+    /// Subscribe to changes in both private and shared databases for real-time updates
     func subscribeToChanges() async throws
 
     /// Process incoming push notification for data changes
-    func handleNotification() async
+    func handleNotification(userInfo: [AnyHashable: Any]) async
 }
 
 // MARK: - CloudKit Error Types
