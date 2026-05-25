@@ -6,7 +6,7 @@ struct LoveNoteView: View {
 
     @State private var selectedTab = 0
 
-    init(cloudKitService: CloudKitService, onExit: @escaping () -> Void) {
+    init(cloudKitService: any CloudKitServiceProtocol, onExit: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: LoveNoteViewModel(cloudKitService: cloudKitService))
         self.onExit = onExit
     }
@@ -166,5 +166,5 @@ private struct NoteCard: View {
 }
 
 #Preview {
-    LoveNoteView(cloudKitService: CloudKitService(), onExit: {})
+    LoveNoteView(cloudKitService: MockCloudKitService(), onExit: {})
 }

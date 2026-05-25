@@ -11,10 +11,27 @@ final class LoveNoteViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var showError: Bool = false
 
-    private let cloudKitService: CloudKitServiceProtocol
+    private let cloudKitService: any CloudKitServiceProtocol
+    private var notificationObserver: Any?
 
-    init(cloudKitService: CloudKitServiceProtocol) {
+    init(cloudKitService: any CloudKitServiceProtocol) {
         self.cloudKitService = cloudKitService
+
+        // BUG 4 FIX: listen for CloudKit push notifications and refresh notes.
+        // handleNotification() in CloudKitService posts this after receiving a silent push.
+        notificationObserver = NotificationCenter.default.addObserver(
+            forName: .pekisCloudKitDataChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { await self?.fetchNotes() }
+        }
+    }
+
+    deinit {
+        if let observer = notificationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     var hasNotes: Bool {
@@ -58,8 +75,9 @@ final class LoveNoteViewModel: ObservableObject {
         do {
             receivedNotes = try await cloudKitService.fetchLoveNotes()
         } catch {
-            // Silently fail - will show cached notes
+            // BUG 6 FIX: was setting errorMessage but never showing the alert.
             errorMessage = error.localizedDescription
+            showError = true
         }
     }
 }
