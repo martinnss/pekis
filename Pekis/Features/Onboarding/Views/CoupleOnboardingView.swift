@@ -6,39 +6,12 @@ struct CoupleOnboardingView: View {
     @EnvironmentObject var cloudKitService: CloudKitService
     @StateObject private var viewModel = CoupleOnboardingViewModel()
 
-    @State private var animateBlob1 = false
-    @State private var animateBlob2 = false
-
     var body: some View {
         ZStack {
             Color.pekisBackground.ignoresSafeArea()
 
             // Ambient background blobs
-            GeometryReader { proxy in
-                ZStack {
-                    Circle()
-                        .fill(Color.pekisPurple.opacity(0.4))
-                        .frame(width: 300, height: 300)
-                        .blur(radius: 60)
-                        .offset(x: animateBlob1 ? -50 : -150, y: animateBlob1 ? -100 : -200)
-
-                    Circle()
-                        .fill(Color.pekisLightPurple.opacity(0.3))
-                        .frame(width: 250, height: 250)
-                        .blur(radius: 50)
-                        .offset(x: animateBlob2 ? 50 : 180, y: animateBlob2 ? 150 : 50)
-                }
-                .frame(width: proxy.size.width, height: proxy.size.height)
-            }
-            .ignoresSafeArea()
-            .onAppear {
-                withAnimation(.easeInOut(duration: 7).repeatForever(autoreverses: true)) {
-                    animateBlob1.toggle()
-                }
-                withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
-                    animateBlob2.toggle()
-                }
-            }
+            BackgroundBlobsView()
 
             Group {
                 switch viewModel.step {
@@ -58,6 +31,9 @@ struct CoupleOnboardingView: View {
             .animation(.easeInOut, value: viewModel.step)
         }
         .onAppear {
+            viewModel.setCloudKitService(cloudKitService)
+        }
+        .onChange(of: cloudKitService.needsPartnerName) {
             viewModel.setCloudKitService(cloudKitService)
         }
         .alert("Error", isPresented: $viewModel.showError) {
@@ -180,31 +156,34 @@ private struct EnterNameStepView: View {
             Spacer()
 
             Button {
-                withAnimation {
-                    viewModel.step = .createOrJoin
-                }
+                Task { await viewModel.continueFromNameEntry() }
             } label: {
-                Text("Continue")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        Group {
-                            if viewModel.userName.isEmpty {
-                                Color.white.opacity(0.2)
-                            } else {
-                                LinearGradient(
-                                    colors: [Color.pekisPurple, Color.pekisLightPurple],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            }
+                HStack(spacing: 8) {
+                    if viewModel.isLoading {
+                        ProgressView().tint(.white).scaleEffect(0.8)
+                    }
+                    Text("Continue")
+                        .font(.headline)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    Group {
+                        if viewModel.userName.isEmpty {
+                            Color.white.opacity(0.2)
+                        } else {
+                            LinearGradient(
+                                colors: [Color.pekisPurple, Color.pekisLightPurple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         }
-                    )
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                )
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
             }
-            .disabled(viewModel.userName.isEmpty)
+            .disabled(viewModel.userName.isEmpty || viewModel.isLoading)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
@@ -334,6 +313,7 @@ private struct CreateOrJoinStepView: View {
 private struct WaitingForPartnerView: View {
     @ObservedObject var viewModel: CoupleOnboardingViewModel
     @State private var animationAmount = 1.0
+    @State private var showCopiedToast = false
 
     var body: some View {
         VStack(spacing: 32) {
@@ -371,22 +351,56 @@ private struct WaitingForPartnerView: View {
                     .padding(.horizontal, 32)
             }
 
-            Button {
-                viewModel.showShareSheet = true
-            } label: {
-                Label("Share Invite Again", systemImage: "square.and.arrow.up")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        LinearGradient(
-                            colors: [Color.pekisPurple, Color.pekisLightPurple],
-                            startPoint: .leading,
-                            endPoint: .trailing
+            VStack(spacing: 12) {
+                // Share button
+                Button {
+                    viewModel.showShareSheet = true
+                } label: {
+                    Label("Share Invite Link", systemImage: "square.and.arrow.up")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                colors: [Color.pekisPurple, Color.pekisLightPurple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .disabled(viewModel.shareURL == nil)
+                .opacity(viewModel.shareURL == nil ? 0.5 : 1)
+
+                // Retry getting link if not available
+                if viewModel.shareURL == nil {
+                    Button {
+                        Task {
+                            await viewModel.fetchShareURL()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                                    .scaleEffect(0.8)
+                            }
+                            Label("Get Link", systemImage: "arrow.clockwise")
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white.opacity(0.1))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        )
+                    }
+                    .disabled(viewModel.isLoading)
+                }
             }
             .padding(.horizontal, 24)
 
@@ -397,11 +411,30 @@ private struct WaitingForPartnerView: View {
                     await viewModel.checkPartnerJoined()
                 }
             } label: {
-                Text("Check Connection")
-                    .foregroundStyle(Color.pekisLightPurple)
+                HStack(spacing: 8) {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .tint(Color.pekisLightPurple)
+                            .scaleEffect(0.8)
+                    }
+                    Text("Check Connection")
+                }
+                .foregroundStyle(Color.pekisLightPurple)
             }
+            .disabled(viewModel.isLoading)
             .padding(.bottom, 32)
+
+            Button {
+                withAnimation {
+                    viewModel.step = .createOrJoin
+                }
+            } label: {
+                Text("Back")
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .padding(.bottom, 8)
         }
+        .animation(.easeInOut, value: showCopiedToast)
     }
 }
 
