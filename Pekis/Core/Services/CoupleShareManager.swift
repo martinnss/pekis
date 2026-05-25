@@ -96,82 +96,139 @@ struct CloudSharingSheet: UIViewControllerRepresentable {
 struct ShareLinkView: View {
     let url: URL
     @Environment(\.dismiss) private var dismiss
+    @State private var showCopiedToast = false
+
+    private var inviteMessage: String {
+        // BUG 5 FIX: removed fake App Store placeholder URL
+        """
+        Hey! Let's stay connected on Pekis 💜
+
+        Pekis is a private space for couples to share moments, memories, and feelings together.
+
+        Tap this link on your iPhone to pair with me:
+        \(url.absoluteString)
+
+        I can't wait to experience this journey with you! 💕✨
+        """
+    }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "heart.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(.pink)
+            ZStack {
+                Color.pekisBackground.ignoresSafeArea()
 
-                Text("Invite Your Partner")
-                    .font(.title.bold())
+                VStack(spacing: 24) {
+                    Image(systemName: "heart.circle.fill")
+                        .font(.system(size: 80))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.pekisLightPurple, .pekisPurple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
 
-                Text("Share this link with your partner to connect your Pekis apps together.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
+                    Text("Invite Your Partner")
+                        .font(.title.bold())
+                        .foregroundStyle(.white)
 
-                VStack(spacing: 16) {
-                    // URL Display
-                    Text(url.absoluteString)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Text("Send this message to your partner. It includes the app download link and your unique connection link.")
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.white.opacity(0.7))
                         .padding(.horizontal)
 
-                    // Share Button
-                    ShareLink(item: url) {
-                        Label("Share Invite Link", systemImage: "square.and.arrow.up")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(.pink)
+                    VStack(spacing: 16) {
+                        // Message Preview
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("MESSAGE PREVIEW")
+                                .font(.caption.bold())
+                                .foregroundStyle(.white.opacity(0.5))
+
+                            Text(inviteMessage)
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.8))
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .padding(.horizontal)
+
+                        // Share Button
+                        ShareLink(item: inviteMessage) {
+                            Label("Share Message", systemImage: "square.and.arrow.up")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.pekisPurple, Color.pekisLightPurple],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .padding(.horizontal)
+
+                        // Copy Button
+                        Button {
+                            UIPasteboard.general.string = inviteMessage
+                            HapticManager.notification(type: .success)
+                            showCopiedToast = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                showCopiedToast = false
+                            }
+                        } label: {
+                            Label("Copy Message", systemImage: "doc.on.doc")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.white.opacity(0.1))
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                        .padding(.horizontal)
+                    }
+
+                    // Copied toast
+                    if showCopiedToast {
+                        Text("✓ Message copied!")
+                            .font(.subheadline.weight(.medium))
                             .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Color.pekisPurple)
+                            .clipShape(Capsule())
+                            .transition(.opacity.combined(with: .scale))
                     }
-                    .padding(.horizontal)
 
-                    // Copy Button
-                    Button {
-                        UIPasteboard.general.url = url
-                        HapticManager.notification(type: .success)
-                    } label: {
-                        Label("Copy Link", systemImage: "doc.on.doc")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray5))
-                            .foregroundStyle(.primary)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    .padding(.horizontal)
+                    Spacer()
                 }
-
-                Spacer()
-
-                Text("Your partner will need to tap the link on their iPhone to join.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding()
+                .padding(.top, 40)
             }
-            .padding(.top, 40)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
+                    .foregroundStyle(Color.pekisLightPurple)
                 }
             }
+            .toolbarBackground(Color.pekisBackground, for: .navigationBar)
         }
+        .animation(.easeInOut, value: showCopiedToast)
     }
 }
 
 // MARK: - Preview
 
 #Preview {
-    ShareLinkView(url: URL(string: "https://example.com/share/abc123")!)
+    ShareLinkView(url: URL(string: "https://example.com/share/abc123") ?? URL(fileURLWithPath: "/"))
 }

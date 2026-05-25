@@ -1,3 +1,4 @@
+import CloudKit
 import Combine
 import SwiftUI
 
@@ -11,22 +12,41 @@ final class HomeViewModel: ObservableObject {
         case dateRoulette
         case thisOrThat
         case loveNote
-//        case momentShare
+        case momentShare
     }
 
     @Published var screen: Screen = .dashboard
     @Published var lastScore: Int = 0
     @Published var isEditingReunionDate: Bool = false
+    @Published var shareURL: URL?
+    @Published var isLoadingShare = false
 
     private let calendar = Calendar.current
-    private let cloudKitService: CloudKitServiceProtocol
+    private let cloudKitService: any CloudKitServiceProtocol
 
-    init(cloudKitService: CloudKitServiceProtocol) {
+    init(cloudKitService: any CloudKitServiceProtocol) {
         self.cloudKitService = cloudKitService
     }
 
     var couple: Couple? {
         cloudKitService.couple
+    }
+
+    var isPaired: Bool {
+        cloudKitService.isPaired
+    }
+
+    var inviteMessage: String {
+        guard let url = shareURL else { return "" }
+        // BUG 5 FIX: removed fake App Store placeholder URL
+        return """
+        Hey! Let's connect on Pekis ❤️
+
+        Tap this link on your iPhone to pair with me:
+        \(url.absoluteString)
+
+        Can't wait to see you there! 🚀
+        """
     }
 
     var quoteForToday: String {
@@ -78,6 +98,25 @@ final class HomeViewModel: ObservableObject {
             HapticManager.notification(type: .success)
         } catch {
             // Handle error
+        }
+    }
+
+    func fetchShareURL() async {
+        isLoadingShare = true
+        defer { isLoadingShare = false }
+
+        do {
+            let share = try await cloudKitService.getOrCreateShare()
+            if let url = share.url {
+                shareURL = url
+            } else {
+                // Retry once
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                let retryShare = try await cloudKitService.getOrCreateShare()
+                shareURL = retryShare.url
+            }
+        } catch {
+            print("Error fetching share URL: \(error)")
         }
     }
 }

@@ -7,6 +7,7 @@ struct DashboardView: View {
     let onDateRoulette: () -> Void
     let onThisOrThat: () -> Void
     let onLoveNote: () -> Void
+    let onMomentShare: () -> Void
 
     @State private var selectedReunionDate = Date()
 
@@ -14,6 +15,9 @@ struct DashboardView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 24) {
                 header
+                if !viewModel.isPaired {
+                    waitingForPartnerView
+                }
                 countdownCard
                 Text("What to Do?")
                     .font(.title3.weight(.semibold))
@@ -25,6 +29,68 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $viewModel.isEditingReunionDate) {
             reunionDatePicker
+        }
+    }
+
+    private var waitingForPartnerView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "hourglass")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .background(.white.opacity(0.2))
+                    .clipShape(Circle())
+
+                Text("Waiting for Partner")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Spacer()
+            }
+
+            Text("Your partner hasn't joined yet. Share the invite link so you can start using Pekis together!")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.9))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                UIPasteboard.general.string = viewModel.inviteMessage
+            } label: {
+                HStack {
+                    if viewModel.isLoadingShare {
+                        ProgressView()
+                            .tint(Color.pekisDarkPurple)
+                    } else {
+                        Image(systemName: "doc.on.doc.fill")
+                        Text("Copy Invite Link")
+                    }
+                }
+                .font(.headline)
+                .foregroundStyle(Color.pekisDarkPurple)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.white)
+                .clipShape(Capsule())
+            }
+            .disabled(viewModel.isLoadingShare)
+        }
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color.pekisPurple.opacity(0.8), Color.pekisLightPurple.opacity(0.8)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+        )
+        .onAppear {
+            Task {
+                await viewModel.fetchShareURL()
+            }
         }
     }
 
@@ -41,11 +107,9 @@ struct DashboardView: View {
                     Text("Pekis")
                         .font(.title.bold())
                         .foregroundStyle(.white)
-                    if let partnerName = viewModel.couple?.partnerBName ?? viewModel.couple?.partnerAName {
-                        Text("with \(partnerName)")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
+                    Text("with \(viewModel.partnerName)")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
                 }
             }
             Spacer()
@@ -195,8 +259,15 @@ struct DashboardView: View {
                 title: "Love Notes",
                 icon: "heart.text.square.fill",
                 accent: .white,
-                badge: "New",
                 action: onLoveNote
+            )
+
+            activityCard(
+                title: "Moment Share",
+                icon: "camera.fill",
+                accent: .white,
+                badge: "New",
+                action: onMomentShare
             )
         }
     }
