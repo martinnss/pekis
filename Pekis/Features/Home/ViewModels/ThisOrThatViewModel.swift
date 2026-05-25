@@ -12,10 +12,26 @@ final class ThisOrThatViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var showReveal: Bool = false
 
-    private let cloudKitService: CloudKitServiceProtocol
+    private let cloudKitService: any CloudKitServiceProtocol
+    private var notificationObserver: Any?
 
-    init(cloudKitService: CloudKitServiceProtocol) {
+    init(cloudKitService: any CloudKitServiceProtocol) {
         self.cloudKitService = cloudKitService
+
+        // BUG 4 FIX: refresh answers when a CloudKit push arrives
+        notificationObserver = NotificationCenter.default.addObserver(
+            forName: .pekisCloudKitDataChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { await self?.loadAnswers() }
+        }
+    }
+
+    deinit {
+        if let observer = notificationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     var currentPair: [String] {

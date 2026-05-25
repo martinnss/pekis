@@ -4,7 +4,7 @@ struct ThisOrThatView: View {
     @StateObject private var viewModel: ThisOrThatViewModel
     let onExit: () -> Void
 
-    init(cloudKitService: CloudKitService, onExit: @escaping () -> Void) {
+    init(cloudKitService: any CloudKitServiceProtocol, onExit: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: ThisOrThatViewModel(cloudKitService: cloudKitService))
         self.onExit = onExit
     }
@@ -175,5 +175,5 @@ struct ThisOrThatView: View {
 }
 
 #Preview {
-    ThisOrThatView(cloudKitService: CloudKitService(), onExit: {})
+    ThisOrThatView(cloudKitService: MockCloudKitService(), onExit: {})
 }
