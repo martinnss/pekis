@@ -1,6 +1,7 @@
 import XCTest
 @testable import Pekis
 
+@MainActor
 final class WordSearchTests: XCTestCase {
     func testGeneratorDirections() {
         // Generate many puzzles to ensure we get different directions
@@ -16,7 +17,7 @@ final class WordSearchTests: XCTestCase {
         }
     }
 
-    func testViewModelDiagonalSelection() {
+    func testViewModelDiagonalSelection() async {
         let viewModel = WordSearchViewModel()
         viewModel.startGame()
 
