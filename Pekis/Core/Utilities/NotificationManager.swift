@@ -10,45 +10,39 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
             if granted {
-                print("Notification permission granted")
                 DispatchQueue.main.async {
-                    self.scheduleNotifications()
+                    self.scheduleNotifications(reunionDate: Couple.loadFromCache()?.reunionDate)
                 }
-            } else if let error = error {
-                print("Error requesting notification permission: \(error.localizedDescription)")
             }
         }
     }
 
     // Handle foreground notifications
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
         completionHandler([.banner, .sound])
     }
 
-    func scheduleNotifications() {
-        let center = UNUserNotificationCenter.current()
+    func scheduleNotifications(reunionDate: Date?) {
+        guard let targetDate = reunionDate, targetDate > Date() else {
+            // No upcoming reunion date — clear stale countdown notifications
+            UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+            return
+        }
 
-        // Remove all pending notifications to reschedule with updated days
+        let center = UNUserNotificationCenter.current()
         center.removeAllPendingNotificationRequests()
 
         let calendar = Calendar.current
-        // Target date: March 1, 2026
-        var dateComponents = DateComponents()
-        dateComponents.year = 2026
-        dateComponents.month = 3
-        dateComponents.day = 1
 
-        guard let targetDate = calendar.date(from: dateComponents) else { return }
-
-        // Schedule for the next 60 occurrences (daily)
-        // 60 days coverage. App needs to be opened to reschedule further.
         for i in 0..<60 {
-            let daysToAdd = i
-            guard let notificationDate = calendar.date(byAdding: .day, value: daysToAdd, to: Date()) else { continue }
+            guard let notificationDate = calendar.date(byAdding: .day, value: i, to: Date()) else { continue }
 
-            // Calculate days remaining from this specific notification date to target
             let components = calendar.dateComponents([.day], from: notificationDate, to: targetDate)
             guard let daysRemaining = components.day, daysRemaining >= 0 else { continue }
 
@@ -56,24 +50,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             content.title = "\(daysRemaining) Dias para Pekis🤍"
             content.sound = .default
 
-            // Trigger at 10:00 AM on that specific date
             var triggerComponents = calendar.dateComponents([.year, .month, .day], from: notificationDate)
             triggerComponents.hour = 10
             triggerComponents.minute = 0
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
-
             let request = UNNotificationRequest(
                 identifier: "pekis_countdown_\(i)",
                 content: content,
                 trigger: trigger
             )
-
-            center.add(request) { error in
-                if let error = error {
-                    print("Error scheduling notification: \(error.localizedDescription)")
-                }
-            }
+            center.add(request, withCompletionHandler: nil)
         }
     }
 }
