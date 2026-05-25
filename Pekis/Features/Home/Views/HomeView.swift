@@ -4,49 +4,20 @@ struct HomeView: View {
     @EnvironmentObject var cloudKitService: CloudKitService
     @StateObject private var wordSearchViewModel = WordSearchViewModel()
 
-    @State private var animateBlob1 = false
-    @State private var animateBlob2 = false
-    @State private var viewModel: HomeViewModel?
+    @StateObject private var viewModel: HomeViewModel
+
+    init(cloudKitService: any CloudKitServiceProtocol) {
+        _viewModel = StateObject(wrappedValue: HomeViewModel(cloudKitService: cloudKitService))
+    }
 
     var body: some View {
         ZStack {
             Color.pekisBackground.ignoresSafeArea()
 
             // Ambient background blobs
-            GeometryReader { proxy in
-                ZStack {
-                    Circle()
-                        .fill(Color.pekisPurple.opacity(0.4))
-                        .frame(width: 300, height: 300)
-                        .blur(radius: 60)
-                        .offset(x: animateBlob1 ? -50 : -150, y: animateBlob1 ? -100 : -200)
+            BackgroundBlobsView()
 
-                    Circle()
-                        .fill(Color.pekisLightPurple.opacity(0.3))
-                        .frame(width: 250, height: 250)
-                        .blur(radius: 50)
-                        .offset(x: animateBlob2 ? 50 : 180, y: animateBlob2 ? 150 : 50)
-                }
-                .frame(width: proxy.size.width, height: proxy.size.height)
-            }
-            .ignoresSafeArea()
-            .onAppear {
-                withAnimation(.easeInOut(duration: 7).repeatForever(autoreverses: true)) {
-                    animateBlob1.toggle()
-                }
-                withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
-                    animateBlob2.toggle()
-                }
-            }
-
-            if let vm = viewModel {
-                mainContent(viewModel: vm)
-            }
-        }
-        .onAppear {
-            if viewModel == nil {
-                viewModel = HomeViewModel(cloudKitService: cloudKitService)
-            }
+            mainContent(viewModel: viewModel)
         }
     }
 
@@ -61,7 +32,8 @@ struct HomeView: View {
                     onTopics: { viewModel.show(.topics) },
                     onDateRoulette: { viewModel.show(.dateRoulette) },
                     onThisOrThat: { viewModel.show(.thisOrThat) },
-                    onLoveNote: { viewModel.show(.loveNote) }
+                    onLoveNote: { viewModel.show(.loveNote) },
+                    onMomentShare: { viewModel.show(.momentShare) }
                 )
             case .wordSearch:
                 WordSearchContainerView(
@@ -92,12 +64,17 @@ struct HomeView: View {
                     cloudKitService: cloudKitService,
                     onExit: { viewModel.show(.dashboard) }
                 )
+            case .momentShare:
+                MomentShareView(
+                    cloudKitService: cloudKitService,
+                    onExit: { viewModel.show(.dashboard) }
+                )
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 32)
         .padding(.bottom, 16)
-        .onChange(of: viewModel.screen) { newValue in
+        .onChange(of: viewModel.screen) { _, newValue in
             if newValue != .wordSearch {
                 wordSearchViewModel.stopGame()
             }
@@ -107,6 +84,6 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(cloudKitService: CloudKitService())
         .environmentObject(CloudKitService())
 }
