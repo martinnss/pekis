@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>aps-environment</key>
-	<string>$(PEKIS_DEBUG_APS_ENVIRONMENT)</string>
+	<string>$(PEKIS_RELEASE_APS_ENVIRONMENT)</string>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>$(PEKIS_CLOUDKIT_CONTAINER_ID)</string>

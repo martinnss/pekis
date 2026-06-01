@@ -152,6 +152,7 @@ CodeCoverage/
 *.env
 .env.local
 .env.*.local
+!.env.example
 
 ## API Keys & Secrets
 Secrets.swift
@@ -196,8 +197,8 @@ crashlytics-build.properties
 ## Personal notes and drafts
 words.md
 ADMISSIONS_NARRATIVE.md
-/.github
-
+/confidential
+/.claude
 ## Deprecated/unused services (none currently)
 
 ## Screenshots folder (if auto-generated)

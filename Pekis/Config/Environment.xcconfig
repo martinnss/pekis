@@ -1,0 +1,5 @@
+#include? "../../.env.example"
+#include? "../../.env"
+
+PEKIS_TESTS_BUNDLE_IDENTIFIER = $(PEKIS_BUNDLE_IDENTIFIER).tests
+PEKIS_UI_TESTS_BUNDLE_IDENTIFIER = $(PEKIS_BUNDLE_IDENTIFIER).uitests
