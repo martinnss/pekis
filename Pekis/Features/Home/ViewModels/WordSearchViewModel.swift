@@ -17,14 +17,19 @@ final class WordSearchViewModel: ObservableObject {
         foundWords.count == puzzle.words.count && !puzzle.words.isEmpty
     }
 
-    func startGame() {
+    func startGame(seed: UInt64? = nil) {
         // Use the current minute as a seed so both players get the same puzzle
         // and it changes frequently enough for multiple games.
         // TimeIntervalSince1970 is UTC, so it works across time zones.
-        let minuteTimestamp = Int(Date().timeIntervalSince1970 / 60)
-        let seed = UInt64(minuteTimestamp)
+        let resolvedSeed: UInt64
+        if let seed {
+            resolvedSeed = seed
+        } else {
+            let minuteTimestamp = Int(Date().timeIntervalSince1970 / 60)
+            resolvedSeed = UInt64(minuteTimestamp)
+        }
 
-        puzzle = WordSearchGenerator.makePuzzle(seed: seed)
+        puzzle = WordSearchGenerator.makePuzzle(seed: resolvedSeed)
         foundWords.removeAll()
         foundCoordinates.removeAll()
         selection.removeAll()

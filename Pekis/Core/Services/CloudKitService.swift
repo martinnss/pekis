@@ -52,8 +52,8 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
     // MARK: - Initialization
 
-    init(containerIdentifier: String = "iCloud.molivares.pekisgame") {
-        self.containerIdentifier = containerIdentifier
+    init(containerIdentifier: String? = nil) {
+        self.containerIdentifier = containerIdentifier ?? AppConfiguration.cloudKitContainerIdentifier
     }
 
     // MARK: - Setup
@@ -563,6 +563,74 @@ extension Notification.Name {
     static let pekisCloudKitDataChanged = Notification.Name("PekisCloudKitDataChanged")
 }
 
+// MARK: - Word Search Sessions
+
+@MainActor
+extension CloudKitService {
+    func fetchWordSearchSession() async throws -> WordSearchSession? {
+        guard let couple = couple else {
+            throw CloudKitError.coupleNotFound
+        }
+
+        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
+        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let recordID = CKRecord.ID(recordName: WordSearchSession.recordName(for: couple.id), zoneID: zoneID)
+
+        do {
+            let record = try await database.record(for: recordID)
+            return WordSearchSession(record: record)
+        } catch let error as CKError where error.code == .unknownItem {
+            return nil
+        } catch {
+            throw CloudKitError.fetchFailed(error)
+        }
+    }
+
+    func saveWordSearchSession(_ session: WordSearchSession) async throws -> WordSearchSession {
+        guard couple != nil else {
+            throw CloudKitError.coupleNotFound
+        }
+
+        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
+        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let record = session.toRecord(in: zoneID)
+
+        do {
+            let savedRecord = try await database.save(record)
+            guard let savedSession = WordSearchSession(record: savedRecord) else {
+                throw CloudKitError.saveFailed(
+                    NSError(
+                        domain: "CloudKitService",
+                        code: -3,
+                        userInfo: [NSLocalizedDescriptionKey: "Saved Word Search session could not be decoded."]
+                    )
+                )
+            }
+            return savedSession
+        } catch {
+            throw CloudKitError.saveFailed(error)
+        }
+    }
+
+    func deleteWordSearchSession() async throws {
+        guard let couple = couple else {
+            throw CloudKitError.coupleNotFound
+        }
+
+        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
+        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let recordID = CKRecord.ID(recordName: WordSearchSession.recordName(for: couple.id), zoneID: zoneID)
+
+        do {
+            _ = try await database.deleteRecord(withID: recordID)
+        } catch let error as CKError where error.code == .unknownItem {
+            return
+        } catch {
+            throw CloudKitError.saveFailed(error)
+        }
+    }
+}
+
 // MARK: - Private Helpers
 
 @MainActor
@@ -677,6 +745,8 @@ final class MockCloudKitService: ObservableObject, CloudKitServiceProtocol {
     @Published var pendingShareMetadata: CKShare.Metadata?
     @Published var needsPartnerName: Bool = false
 
+    private var wordSearchSession: WordSearchSession?
+
     var isPaired: Bool { couple?.partnerBIdentifier != nil }
 
     func setup() async {}
@@ -697,6 +767,16 @@ final class MockCloudKitService: ObservableObject, CloudKitServiceProtocol {
     func fetchThisOrThatAnswers() async throws -> [ThisOrThatAnswer] { [] }
     func saveMoment(imageData: Data, prompt: String) async throws {}
     func fetchTodaysMoments() async throws -> [MomentShareRecord] { [] }
+    func fetchWordSearchSession() async throws -> WordSearchSession? {
+        wordSearchSession
+    }
+    func saveWordSearchSession(_ session: WordSearchSession) async throws -> WordSearchSession {
+        wordSearchSession = session
+        return session
+    }
+    func deleteWordSearchSession() async throws {
+        wordSearchSession = nil
+    }
     func getOrCreateShare() async throws -> CKShare {
         // Return a stub CKShare to avoid fatalError crashing previews
         throw CloudKitError.shareNotFound

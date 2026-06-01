@@ -6,6 +6,7 @@
 //
 
 import CloudKit
+import OSLog
 import SwiftUI
 import UIKit
 
@@ -60,7 +61,7 @@ struct PekisApp: App {
 
     private func handleIncomingURL(_ url: URL) {
         // CloudKit share URLs use the cloudkit scheme
-        let container = CKContainer(identifier: "iCloud.molivares.pekisgame")
+        let container = CKContainer(identifier: AppConfiguration.cloudKitContainerIdentifier)
 
         Task { @MainActor in
             do {
@@ -76,7 +77,7 @@ struct PekisApp: App {
                 cloudKitService.pendingShareMetadata = metadata
                 try await cloudKitService.acceptShare(metadata)
             } catch {
-                print("Failed to handle share URL: \(error.localizedDescription)")
+                PekisLogger.app.error("Failed to handle share URL: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

@@ -38,6 +38,7 @@ struct HomeView: View {
             case .wordSearch:
                 WordSearchContainerView(
                     viewModel: wordSearchViewModel,
+                    cloudKitService: cloudKitService,
                     onFinish: { score in viewModel.handleWordSearchFinished(score: score) },
                     onExit: { viewModel.show(.dashboard) }
                 )
@@ -46,7 +47,6 @@ struct HomeView: View {
                     score: viewModel.lastScore,
                     onRestart: {
                         viewModel.show(.wordSearch)
-                        wordSearchViewModel.startGame()
                     },
                     onExit: { viewModel.show(.dashboard) }
                 )

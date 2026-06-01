@@ -86,6 +86,17 @@ protocol CloudKitServiceProtocol: ObservableObject {
     /// - Returns: Array of today's MomentShareRecord (0–2 items: one per partner)
     func fetchTodaysMoments() async throws -> [MomentShareRecord]
 
+    // MARK: - Word Search Sessions
+
+    /// Fetch the active Word Search session for the paired couple, if one exists
+    func fetchWordSearchSession() async throws -> WordSearchSession?
+
+    /// Save the active Word Search session for the paired couple
+    func saveWordSearchSession(_ session: WordSearchSession) async throws -> WordSearchSession
+
+    /// Delete the active Word Search session for the paired couple
+    func deleteWordSearchSession() async throws
+
     // MARK: - Sharing
 
     /// Get the CKShare for the couple zone (for UICloudSharingController)

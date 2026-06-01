@@ -38,6 +38,21 @@ final class WordSearchTests: XCTestCase {
         XCTAssertTrue(viewModel.selection.contains(GridCoordinate(row: 2, column: 2)))
     }
 
+    func testViewModelUsesProvidedSeedForDeterministicPuzzle() async {
+        let seed: UInt64 = 42
+        let viewModel = WordSearchViewModel()
+
+        viewModel.startGame(seed: seed)
+
+        let expectedPuzzle = WordSearchGenerator.makePuzzle(seed: seed)
+        XCTAssertEqual(renderedGrid(viewModel.puzzle.grid), renderedGrid(expectedPuzzle.grid))
+        XCTAssertEqual(viewModel.puzzle.words, expectedPuzzle.words)
+    }
+
+    private func renderedGrid(_ grid: [[String]]) -> String {
+        grid.map { $0.joined() }.joined(separator: "\n")
+    }
+
     private func findWordInGrid(_ word: String, grid: [[String]]) -> Bool {
         let rows = grid.count
         let cols = grid[0].count

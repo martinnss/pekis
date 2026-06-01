@@ -1,5 +1,6 @@
 import CloudKit
 import Combine
+import OSLog
 import SwiftUI
 
 @MainActor
@@ -116,7 +117,7 @@ final class HomeViewModel: ObservableObject {
                 shareURL = retryShare.url
             }
         } catch {
-            print("Error fetching share URL: \(error)")
+            PekisLogger.cloudKit.error("Failed to fetch share URL: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
