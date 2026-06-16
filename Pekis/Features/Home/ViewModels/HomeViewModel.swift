@@ -21,6 +21,11 @@ final class HomeViewModel: ObservableObject {
     @Published var isEditingReunionDate: Bool = false
     @Published var shareURL: URL?
     @Published var isLoadingShare = false
+    @Published var saveErrorMessage: String?
+
+    var canCopyInvite: Bool {
+        shareURL != nil
+    }
 
     private let calendar = Calendar.current
     private let cloudKitService: any CloudKitServiceProtocol
@@ -95,10 +100,13 @@ final class HomeViewModel: ObservableObject {
     func updateReunionDate(_ date: Date) async {
         do {
             try await cloudKitService.updateReunionDate(date)
-            isEditingReunionDate = false
             HapticManager.notification(type: .success)
+            isEditingReunionDate = false
         } catch {
-            // Handle error
+            // Surface failure with haptic + message instead of silently doing nothing.
+            HapticManager.notification(type: .error)
+            saveErrorMessage = "Couldn't save the date. Check your connection and try again."
+            PekisLogger.cloudKit.error("Failed to update reunion date: \(error.localizedDescription, privacy: .public)")
         }
     }
 

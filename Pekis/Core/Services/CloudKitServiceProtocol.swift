@@ -22,6 +22,9 @@ protocol CloudKitServiceProtocol: ObservableObject {
     /// Loading state for UI feedback
     var isLoading: Bool { get }
 
+    /// True once the initial cold-launch couple check has completed
+    var hasLoadedInitialState: Bool { get }
+
     /// Error message for UI display
     var errorMessage: String? { get }
 
@@ -51,6 +54,12 @@ protocol CloudKitServiceProtocol: ObservableObject {
     /// Update partner name
     /// - Parameter name: The new name
     func updateMyName(_ name: String) async throws
+
+    /// Break the couple connection and wipe all shared data for a clean slate.
+    /// The owner deletes the couple zone (erasing the record, the share, and all
+    /// shared content for both partners); a participant leaves the share. Local
+    /// caches are always cleared so the app returns to onboarding.
+    func disconnectCouple() async throws
 
     // MARK: - Love Notes
 

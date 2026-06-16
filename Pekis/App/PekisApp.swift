@@ -13,7 +13,18 @@ import UIKit
 // MARK: - App Delegate (remote notification processing for CloudKit)
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
-    var cloudKitService: CloudKitService?
+    var cloudKitService: CloudKitService? {
+        didSet {
+            // A share tapped on a cold launch can arrive before RootView wires up
+            // the service. Replay it once the service is available.
+            if let metadata = pendingShareMetadata {
+                pendingShareMetadata = nil
+                accept(metadata)
+            }
+        }
+    }
+
+    private var pendingShareMetadata: CKShare.Metadata?
 
     func application(
         _ application: UIApplication,
@@ -23,6 +34,32 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in
             await cloudKitService?.handleNotification(userInfo: userInfo)
             completionHandler(.newData)
+        }
+    }
+
+    // Invoked by the system when the user taps a CloudKit share link. Requires
+    // `CKSharingSupported = YES` in Info.plist. iCloud share URLs are delivered
+    // here, not via SwiftUI's `onOpenURL`, which only sees the app's own schemes
+    // and universal links.
+    func application(
+        _ application: UIApplication,
+        userDidAcceptCloudKitShareWith metadata: CKShare.Metadata
+    ) {
+        guard cloudKitService != nil else {
+            pendingShareMetadata = metadata
+            return
+        }
+        accept(metadata)
+    }
+
+    private func accept(_ metadata: CKShare.Metadata) {
+        Task { @MainActor in
+            cloudKitService?.pendingShareMetadata = metadata
+            do {
+                try await cloudKitService?.acceptShare(metadata)
+            } catch {
+                PekisLogger.app.error("Failed to accept share: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 }
@@ -41,7 +78,11 @@ struct PekisApp: App {
                     NotificationManager.shared.requestAuthorization()
                     // Skip CloudKit in test environments — entitlements are absent
                     // when built with CODE_SIGNING_ALLOWED=NO, causing CKContainer to crash.
-                    guard !Bundle.allBundles.contains(where: { $0.bundlePath.hasSuffix(".xctest") }) else {
+                    // The PEKIS_SKIP_CLOUDKIT env flag offers the same escape hatch for
+                    // unsigned UI-preview builds on the simulator (never set in shipping).
+                    let isTestBundle = Bundle.allBundles.contains { $0.bundlePath.hasSuffix(".xctest") }
+                    let skipCloudKit = ProcessInfo.processInfo.environment["PEKIS_SKIP_CLOUDKIT"] == "1"
+                    guard !isTestBundle, !skipCloudKit else {
                         return
                     }
                     Task {
@@ -52,33 +93,6 @@ struct PekisApp: App {
                         )
                     }
                 }
-                .onOpenURL { url in
-                    // Handle incoming CloudKit share URLs
-                    handleIncomingURL(url)
-                }
-        }
-    }
-
-    private func handleIncomingURL(_ url: URL) {
-        // CloudKit share URLs use the cloudkit scheme
-        let container = CKContainer(identifier: AppConfiguration.cloudKitContainerIdentifier)
-
-        Task { @MainActor in
-            do {
-                let metadata = try await withCheckedThrowingContinuation { continuation in
-                    container.fetchShareMetadata(with: url) { metadata, error in
-                        if let metadata {
-                            continuation.resume(returning: metadata)
-                        } else {
-                            continuation.resume(throwing: error ?? CloudKitError.shareNotFound)
-                        }
-                    }
-                }
-                cloudKitService.pendingShareMetadata = metadata
-                try await cloudKitService.acceptShare(metadata)
-            } catch {
-                PekisLogger.app.error("Failed to handle share URL: \(error.localizedDescription, privacy: .public)")
-            }
         }
     }
 }
@@ -90,7 +104,7 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if cloudKitService.isLoading && cloudKitService.couple == nil {
+            if !cloudKitService.hasLoadedInitialState && cloudKitService.couple == nil {
                 LoadingView()
             } else if cloudKitService.couple == nil || cloudKitService.needsPartnerName {
                 CoupleOnboardingView()
@@ -107,15 +121,17 @@ struct RootView: View {
 struct LoadingView: View {
     var body: some View {
         ZStack {
-            Color.pekisBackground.ignoresSafeArea()
+            CozyBackground()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
+                PekiMascot(mood: .sleepy, tint: .pekisLightPurple, size: 130)
+
+                Text("Waking up…")
+                    .font(PekisFont.headline())
+                    .foregroundStyle(.pekisInk)
+
                 ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-
-                Text("Connecting to iCloud...")
-                    .foregroundStyle(.white.opacity(0.8))
+                    .tint(.pekisPurple)
             }
         }
     }

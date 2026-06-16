@@ -1,6 +1,7 @@
 import Foundation
 import CloudKit
 import Combine
+import OSLog
 
 /// CloudKit service implementation for private couple data synchronization
 /// All data stays in users' private iCloud containers - developer has zero access
@@ -22,8 +23,14 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
     // MARK: - Published Properties
 
     @Published private(set) var currentUserID: String?
-    @Published private(set) var couple: Couple?
+    @Published private(set) var couple: Couple? {
+        didSet { WidgetBridge.update(couple: couple, currentUserID: currentUserID) }
+    }
     @Published private(set) var isLoading = false
+    /// True once the initial cold-launch couple check has finished. Drives the
+    /// one-time full-screen LoadingView so later `isLoading` toggles (e.g. while
+    /// creating a couple) don't tear the onboarding flow down and reset it.
+    @Published private(set) var hasLoadedInitialState = false
     @Published var errorMessage: String?
     @Published var pendingShareMetadata: CKShare.Metadata?
     @Published var needsPartnerName = false
@@ -60,7 +67,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
     func setup() async {
         isLoading = true
-        defer { isLoading = false }
+        defer { isLoading = false; hasLoadedInitialState = true }
 
         do {
             // Get current user ID
@@ -429,9 +436,11 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
     // MARK: - Sharing
 
     func getOrCreateShare() async throws -> CKShare {
-        guard let existingCoupleRecord = coupleRecord else {
-            throw CloudKitError.coupleNotFound
-        }
+        // The couple may have been served from cache (no CKRecord in hand) after
+        // an offline launch or a transient setup error. Re-fetch the live record
+        // before giving up so the invite link doesn't silently fail.
+        if coupleRecord == nil { _ = try? await fetchOwnedCouple() }
+        guard let existingCoupleRecord = coupleRecord else { throw CloudKitError.coupleNotFound }
 
         // Check if share already exists and is valid
         if let existingShare = shareRecord, existingShare.url != nil {
@@ -464,7 +473,11 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
         // Create a new share for the up-to-date couple record
         let share = CKShare(rootRecord: freshCoupleRecord)
         share[CKShare.SystemFieldKey.title] = "Pekis Couple" as CKRecordValue
-        share.publicPermission = .none // Private sharing only
+        // Anyone with the invite link can join as a participant. Without this
+        // (.none), CloudKit only authorizes participants added by Apple ID, so a
+        // partner who taps the URL is rejected with "owner stopped sharing / no
+        // permission." Read-write lets the partner sync moments back.
+        share.publicPermission = .readWrite
 
         do {
             // Use changedKeys policy to avoid ETag conflicts when the record was just fetched
@@ -727,6 +740,47 @@ private extension CloudKitService {
     }
 }
 
+// MARK: - Disconnect
+
+extension CloudKitService {
+    func disconnectCouple() async throws {
+        // Make sure we hold the live record so we can tell whether we own the zone.
+        if coupleRecord == nil { _ = try? await fetchOwnedCouple() }
+        if coupleRecord == nil { _ = try? await fetchSharedCouple() }
+
+        if let record = coupleRecord {
+            let zoneID = record.recordID.zoneID
+            do {
+                if zoneID.ownerName == CKCurrentUserDefaultName {
+                    // Owner: deleting the zone erases the couple record, the
+                    // share, and every shared record — for both partners.
+                    _ = try await privateDatabase.deleteRecordZone(withID: coupleZoneID)
+                } else {
+                    // Participant: leaving the shared zone removes our access.
+                    _ = try await sharedDatabase.deleteRecordZone(withID: zoneID)
+                }
+            } catch {
+                // Still clear local state so the user is never stuck connected.
+                PekisLogger.cloudKit.error("Disconnect cleanup failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        resetAfterDisconnect()
+    }
+
+    private func resetAfterDisconnect() {
+        coupleRecord = nil
+        shareRecord = nil
+        pendingShareMetadata = nil
+        needsPartnerName = false
+        errorMessage = nil
+        couple = nil // didSet clears the widget snapshot
+        Couple.clearCache()
+        LoveNote.clearCache()
+        ThisOrThatAnswer.clearCache()
+    }
+}
+
 // MARK: - Preview/Testing Support
 
 #if DEBUG
@@ -741,6 +795,7 @@ final class MockCloudKitService: ObservableObject, CloudKitServiceProtocol {
         reunionDate: Calendar.current.date(byAdding: .day, value: 30, to: Date())
     )
     @Published var isLoading = false
+    @Published var hasLoadedInitialState = true
     @Published var errorMessage: String?
     @Published var pendingShareMetadata: CKShare.Metadata?
     @Published var needsPartnerName: Bool = false
@@ -761,6 +816,7 @@ final class MockCloudKitService: ObservableObject, CloudKitServiceProtocol {
         couple?.reunionDate = date
     }
     func updateMyName(_ name: String) async throws {}
+    func disconnectCouple() async throws { couple = nil }
     func sendLoveNote(content: String) async throws {}
     func fetchLoveNotes() async throws -> [LoveNote] { [] }
     func saveThisOrThatAnswer(questionIndex: Int, selectedOption: Int) async throws {}
