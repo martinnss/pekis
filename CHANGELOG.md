@@ -8,6 +8,8 @@ The project did not previously maintain a changelog in-repo. The entries below e
 
 ### Added
 
+- Home Screen and Lock Screen countdown widget ("Together Countdown") that counts the days until the couple reunites, with five hand-tuned themes, a progress ring, and per-widget personalization (custom label, optional personal date for solo use) via an App Intents configuration
+- App Group data sharing so the widget reads the couple's reunion date without touching CloudKit; the app refreshes widget timelines whenever the couple changes
 - Public repository governance and support documents, including Code of Conduct, Security Policy, Privacy guide, Development guide, and GitHub issue and pull request templates
 
 ## [1.1.0] - 2026-05-31

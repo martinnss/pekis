@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C6F100000000000000000A13 /* PekisWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C6F100000000000000000A02 /* PekisWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C6F100000000000000000B02 /* PekisWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F100000000000000000B01 /* PekisWidgetBundle.swift */; };
+		C6F100000000000000000B04 /* CountdownWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F100000000000000000B03 /* CountdownWidget.swift */; };
+		C6F100000000000000000B06 /* CountdownWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F100000000000000000B05 /* CountdownWidgetViews.swift */; };
+		C6F100000000000000000B08 /* WidgetTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F100000000000000000B07 /* WidgetTheme.swift */; };
+		C6F100000000000000000B10 /* CountdownConfigIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F100000000000000000B09 /* CountdownConfigIntent.swift */; };
+		C6F100000000000000000B21 /* PekisSharedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F100000000000000000B20 /* PekisSharedData.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		C67374CE2ED3ADCD00233622 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,18 +31,61 @@
 			remoteGlobalIDString = C67374BF2ED3ADCC00233622;
 			remoteInfo = Pekis;
 		};
+		C6F100000000000000000A11 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C67374B82ED3ADCC00233622 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C6F100000000000000000A01;
+			remoteInfo = PekisWidget;
+		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		C6F100000000000000000A12 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C6F100000000000000000A13 /* PekisWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		C6E0F0012F0D100100000001 /* Environment.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Pekis/Config/Environment.xcconfig; sourceTree = "<group>"; };
 		C67374C02ED3ADCC00233622 /* Pekis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pekis.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C67374CD2ED3ADCD00233622 /* PekisTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PekisTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C67374D72ED3ADCD00233622 /* PekisUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PekisUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Pekis/Config/Environment.xcconfig; sourceTree = "<group>"; };
+		C6F100000000000000000A02 /* PekisWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PekisWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6F100000000000000000B01 /* PekisWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PekisWidgetBundle.swift; sourceTree = "<group>"; };
+		C6F100000000000000000B03 /* CountdownWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownWidget.swift; sourceTree = "<group>"; };
+		C6F100000000000000000B05 /* CountdownWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownWidgetViews.swift; sourceTree = "<group>"; };
+		C6F100000000000000000B07 /* WidgetTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTheme.swift; sourceTree = "<group>"; };
+		C6F100000000000000000B09 /* CountdownConfigIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownConfigIntent.swift; sourceTree = "<group>"; };
+		C6F100000000000000000B11 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C6F100000000000000000B12 /* PekisWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PekisWidget.entitlements; sourceTree = "<group>"; };
+		C6F100000000000000000B20 /* PekisSharedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PekisSharedData.swift; path = Pekis/Core/Shared/PekisSharedData.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C6E0F0022F0D100100000002 /* Exceptions for "Pekis" folder in "Pekis" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C67374BF2ED3ADCC00233622 /* Pekis */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C67374C22ED3ADCC00233622 /* Pekis */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C6E0F0022F0D100100000002 /* Exceptions for "Pekis" folder in "Pekis" target */,
+			);
 			path = Pekis;
 			sourceTree = "<group>";
 		};
@@ -70,14 +123,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C6F100000000000000000A04 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		C67374B72ED3ADCC00233622 = {
 			isa = PBXGroup;
 			children = (
-				C6E0F0012F0D100100000001 /* Environment.xcconfig */,
+				C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */,
 				C67374C22ED3ADCC00233622 /* Pekis */,
+				C6F100000000000000000A09 /* PekisWidget */,
 				C67374D02ED3ADCD00233622 /* PekisTests */,
 				C67374DA2ED3ADCD00233622 /* PekisUITests */,
 				C67374C12ED3ADCC00233622 /* Products */,
@@ -90,8 +151,24 @@
 				C67374C02ED3ADCC00233622 /* Pekis.app */,
 				C67374CD2ED3ADCD00233622 /* PekisTests.xctest */,
 				C67374D72ED3ADCD00233622 /* PekisUITests.xctest */,
+				C6F100000000000000000A02 /* PekisWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C6F100000000000000000A09 /* PekisWidget */ = {
+			isa = PBXGroup;
+			children = (
+				C6F100000000000000000B01 /* PekisWidgetBundle.swift */,
+				C6F100000000000000000B03 /* CountdownWidget.swift */,
+				C6F100000000000000000B05 /* CountdownWidgetViews.swift */,
+				C6F100000000000000000B07 /* WidgetTheme.swift */,
+				C6F100000000000000000B09 /* CountdownConfigIntent.swift */,
+				C6F100000000000000000B20 /* PekisSharedData.swift */,
+				C6F100000000000000000B11 /* Info.plist */,
+				C6F100000000000000000B12 /* PekisWidget.entitlements */,
+			);
+			path = PekisWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -105,10 +182,12 @@
 				C67374BC2ED3ADCC00233622 /* Sources */,
 				C67374BD2ED3ADCC00233622 /* Frameworks */,
 				C67374BE2ED3ADCC00233622 /* Resources */,
+				C6F100000000000000000A12 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C6F100000000000000000A10 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				C67374C22ED3ADCC00233622 /* Pekis */,
@@ -166,6 +245,25 @@
 			productReference = C67374D72ED3ADCD00233622 /* PekisUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		C6F100000000000000000A01 /* PekisWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6F100000000000000000A06 /* Build configuration list for PBXNativeTarget "PekisWidget" */;
+			buildPhases = (
+				C6F100000000000000000A03 /* Sources */,
+				C6F100000000000000000A04 /* Frameworks */,
+				C6F100000000000000000A05 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PekisWidget;
+			packageProductDependencies = (
+			);
+			productName = PekisWidget;
+			productReference = C6F100000000000000000A02 /* PekisWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -187,6 +285,9 @@
 						CreatedOnToolsVersion = 26.0.1;
 						TestTargetID = C67374BF2ED3ADCC00233622;
 					};
+					C6F100000000000000000A01 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
 				};
 			};
 			buildConfigurationList = C67374BB2ED3ADCC00233622 /* Build configuration list for PBXProject "Pekis" */;
@@ -204,6 +305,7 @@
 			projectRoot = "";
 			targets = (
 				C67374BF2ED3ADCC00233622 /* Pekis */,
+				C6F100000000000000000A01 /* PekisWidget */,
 				C67374CC2ED3ADCD00233622 /* PekisTests */,
 				C67374D62ED3ADCD00233622 /* PekisUITests */,
 			);
@@ -226,6 +328,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		C67374D52ED3ADCD00233622 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C6F100000000000000000A05 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -277,6 +386,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C6F100000000000000000A03 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C6F100000000000000000B02 /* PekisWidgetBundle.swift in Sources */,
+				C6F100000000000000000B04 /* CountdownWidget.swift in Sources */,
+				C6F100000000000000000B06 /* CountdownWidgetViews.swift in Sources */,
+				C6F100000000000000000B08 /* WidgetTheme.swift in Sources */,
+				C6F100000000000000000B10 /* CountdownConfigIntent.swift in Sources */,
+				C6F100000000000000000B21 /* PekisSharedData.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -290,12 +412,17 @@
 			target = C67374BF2ED3ADCC00233622 /* Pekis */;
 			targetProxy = C67374D82ED3ADCD00233622 /* PBXContainerItemProxy */;
 		};
+		C6F100000000000000000A10 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C6F100000000000000000A01 /* PekisWidget */;
+			targetProxy = C6F100000000000000000A11 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C67374DF2ED3ADCD00233622 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -360,7 +487,7 @@
 		};
 		C67374E02ED3ADCD00233622 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -418,7 +545,7 @@
 		};
 		C67374E22ED3ADCD00233622 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -430,9 +557,11 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Pekis/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pekis saves shared photo moments to your iCloud-backed couple space.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pekis accesses your photo library so you can share moments with your partner.";
+				INFOPLIST_KEY_PEKIS_APP_GROUP_ID = "group.$(PEKIS_BUNDLE_IDENTIFIER)";
 				INFOPLIST_KEY_PEKIS_CLOUDKIT_CONTAINER_ID = "$(PEKIS_CLOUDKIT_CONTAINER_ID)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -461,7 +590,7 @@
 		};
 		C67374E32ED3ADCD00233622 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -473,9 +602,11 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Pekis/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pekis saves shared photo moments to your iCloud-backed couple space.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pekis accesses your photo library so you can share moments with your partner.";
+				INFOPLIST_KEY_PEKIS_APP_GROUP_ID = "group.$(PEKIS_BUNDLE_IDENTIFIER)";
 				INFOPLIST_KEY_PEKIS_CLOUDKIT_CONTAINER_ID = "$(PEKIS_CLOUDKIT_CONTAINER_ID)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -504,7 +635,7 @@
 		};
 		C67374E52ED3ADCD00233622 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -527,7 +658,7 @@
 		};
 		C67374E62ED3ADCD00233622 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -550,7 +681,7 @@
 		};
 		C67374E82ED3ADCD00233622 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -571,7 +702,7 @@
 		};
 		C67374E92ED3ADCD00233622 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E0F0012F0D100100000001 /* Environment.xcconfig */;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -587,6 +718,67 @@
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Pekis;
+			};
+			name = Release;
+		};
+		C6F100000000000000000A07 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PekisWidget/PekisWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "$(PEKIS_DEVELOPMENT_TEAM)";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PekisWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pekis Countdown";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_PEKIS_APP_GROUP_ID = "group.$(PEKIS_BUNDLE_IDENTIFIER)";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PEKIS_BUNDLE_IDENTIFIER).PekisWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C6F100000000000000000A08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6E0F0012F0D100100000001 /* Pekis/Config/Environment.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PekisWidget/PekisWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "$(PEKIS_DEVELOPMENT_TEAM)";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PekisWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pekis Countdown";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_PEKIS_APP_GROUP_ID = "group.$(PEKIS_BUNDLE_IDENTIFIER)";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PEKIS_BUNDLE_IDENTIFIER).PekisWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -625,6 +817,15 @@
 			buildConfigurations = (
 				C67374E82ED3ADCD00233622 /* Debug */,
 				C67374E92ED3ADCD00233622 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C6F100000000000000000A06 /* Build configuration list for PBXNativeTarget "PekisWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C6F100000000000000000A07 /* Debug */,
+				C6F100000000000000000A08 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
