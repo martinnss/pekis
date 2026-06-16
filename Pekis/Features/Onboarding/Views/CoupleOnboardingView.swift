@@ -8,10 +8,7 @@ struct CoupleOnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color.pekisBackground.ignoresSafeArea()
-
-            // Ambient background blobs
-            BackgroundBlobsView()
+            CozyBackground()
 
             Group {
                 switch viewModel.step {
@@ -55,28 +52,19 @@ private struct WelcomeStepView: View {
     @ObservedObject var viewModel: CoupleOnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 28) {
             Spacer()
 
-            Image(systemName: "heart.fill")
-                .font(.system(size: 100))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.pekisLightPurple, .pekisPurple],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: .pekisPurple.opacity(0.5), radius: 20)
+            PekiDuo(mood: .waving, size: 110)
 
             VStack(spacing: 12) {
                 Text("Welcome to Pekis")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.white)
+                    .font(PekisFont.bigTitle())
+                    .foregroundStyle(.pekisInk)
 
                 Text("Connect with your partner and make every moment count, even from miles away.")
-                    .font(.body)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(PekisFont.body())
+                    .foregroundStyle(.pekisInkSoft)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -85,28 +73,16 @@ private struct WelcomeStepView: View {
 
             VStack(spacing: 16) {
                 Button {
-                    withAnimation {
-                        viewModel.step = .enterName
-                    }
+                    withAnimation { viewModel.step = .enterName }
                 } label: {
                     Text("Get Started")
-                        .font(.headline)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [Color.pekisPurple, Color.pekisLightPurple],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
+                .buttonStyle(SquishyButtonStyle(tint: .pekisPurple))
 
-                Text("Your data stays private in your iCloud account")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
+                Label("Your data stays private in your iCloud", systemImage: "lock.fill")
+                    .font(PekisFont.caption())
+                    .foregroundStyle(.pekisInkSoft)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
@@ -121,36 +97,33 @@ private struct EnterNameStepView: View {
     @FocusState private var isNameFocused: Bool
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 28) {
             Spacer()
 
-            VStack(spacing: 12) {
-                Image(systemName: "person.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(Color.pekisLightPurple)
+            PekiMascot(mood: .happy, tint: .pekisCoral, size: 110)
 
+            VStack(spacing: 10) {
                 Text("What's your name?")
-                    .font(.title.bold())
-                    .foregroundStyle(.white)
+                    .font(PekisFont.title())
+                    .foregroundStyle(.pekisInk)
 
                 Text("This is how your partner will see you in the app.")
-                    .font(.body)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(PekisFont.body())
+                    .foregroundStyle(.pekisInkSoft)
                     .multilineTextAlignment(.center)
             }
 
             TextField("Your name", text: $viewModel.userName)
-                .font(.title2)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
+                .foregroundStyle(.pekisInk)
                 .padding()
-                .background(Color.white.opacity(0.1))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .background(Color.pekisSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.pekisLightPurple.opacity(0.5), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.pekisCoral.opacity(0.4), lineWidth: 2)
                 )
-                .padding(.horizontal, 48)
+                .padding(.horizontal, 40)
                 .focused($isNameFocused)
 
             Spacer()
@@ -163,33 +136,15 @@ private struct EnterNameStepView: View {
                         ProgressView().tint(.white).scaleEffect(0.8)
                     }
                     Text("Continue")
-                        .font(.headline)
                 }
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(
-                    Group {
-                        if viewModel.userName.isEmpty {
-                            Color.white.opacity(0.2)
-                        } else {
-                            LinearGradient(
-                                colors: [Color.pekisPurple, Color.pekisLightPurple],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        }
-                    }
-                )
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
             }
+            .buttonStyle(SquishyButtonStyle(tint: viewModel.userName.isEmpty ? .pekisInkSoft : .pekisPurple))
             .disabled(viewModel.userName.isEmpty || viewModel.isLoading)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
-        .onAppear {
-            isNameFocused = true
-        }
+        .onAppear { isNameFocused = true }
     }
 }
 
@@ -199,85 +154,41 @@ private struct CreateOrJoinStepView: View {
     @ObservedObject var viewModel: CoupleOnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 28) {
             Spacer()
 
-            VStack(spacing: 12) {
-                Image(systemName: "link.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(Color.pekisLightPurple)
+            PekiMascot(mood: .idle, tint: .pekisSky, size: 100)
 
+            VStack(spacing: 10) {
                 Text("Connect with Partner")
-                    .font(.title.bold())
-                    .foregroundStyle(.white)
+                    .font(PekisFont.title())
+                    .foregroundStyle(.pekisInk)
 
                 Text("Create a new couple or join your partner's existing one.")
-                    .font(.body)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(PekisFont.body())
+                    .foregroundStyle(.pekisInkSoft)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
 
             VStack(spacing: 16) {
-                // Create New Couple
-                Button {
-                    Task {
-                        await viewModel.createCouple()
-                    }
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Create New Couple")
-                                .font(.headline)
-                            Text("Start fresh and invite your partner")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.pekisPurple, Color.pekisLightPurple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                optionCard(
+                    icon: "plus.circle.fill",
+                    tint: .pekisCoral,
+                    title: "Create New Couple",
+                    subtitle: "Start fresh and invite your partner"
+                ) {
+                    Task { await viewModel.createCouple() }
                 }
                 .disabled(viewModel.isLoading)
 
-                // Join Partner
-                Button {
+                optionCard(
+                    icon: "person.2.fill",
+                    tint: .pekisMint,
+                    title: "Join Partner's Couple",
+                    subtitle: "I have an invite link from my partner"
+                ) {
                     viewModel.showJoinInstructions = true
-                } label: {
-                    HStack {
-                        Image(systemName: "person.2.fill")
-                            .font(.title2)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Join Partner's Couple")
-                                .font(.headline)
-                            Text("I have an invite link from my partner")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.6))
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white.opacity(0.1))
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                    )
                 }
             }
             .padding(.horizontal, 24)
@@ -285,19 +196,15 @@ private struct CreateOrJoinStepView: View {
             Spacer()
 
             if viewModel.isLoading {
-                ProgressView()
-                    .tint(.white)
-                    .padding()
+                ProgressView().tint(.pekisPurple).padding()
             }
 
             Button {
-                withAnimation {
-                    viewModel.step = .enterName
-                }
+                withAnimation { viewModel.step = .enterName }
             } label: {
-                Text("Back")
-                    .foregroundStyle(.white.opacity(0.6))
+                Text("Back").font(PekisFont.headline())
             }
+            .tint(.pekisInkSoft)
             .padding(.bottom, 32)
         }
         .alert("Join Your Partner", isPresented: $viewModel.showJoinInstructions) {
@@ -306,99 +213,87 @@ private struct CreateOrJoinStepView: View {
             Text("Ask your partner to share their invite link with you. Tap the link to connect.")
         }
     }
+
+    private func optionCard(
+        icon: String,
+        tint: Color,
+        title: String,
+        subtitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                CozyIconBadge(systemName: icon, tint: tint, size: 48)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(PekisFont.headline())
+                        .foregroundStyle(.pekisInk)
+                    Text(subtitle)
+                        .font(PekisFont.caption())
+                        .foregroundStyle(.pekisInkSoft)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(tint)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .cozyCard(accent: tint)
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
 }
 
 // MARK: - Waiting for Partner View
 
 private struct WaitingForPartnerView: View {
     @ObservedObject var viewModel: CoupleOnboardingViewModel
-    @State private var animationAmount = 1.0
-    @State private var showCopiedToast = false
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 24) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .stroke(lineWidth: 4)
-                    .foregroundStyle(Color.pekisLightPurple.opacity(0.3))
-                    .frame(width: 120, height: 120)
-                    .scaleEffect(animationAmount)
-                    .opacity(2 - animationAmount)
-                    .animation(
-                        .easeInOut(duration: 1.5).repeatForever(autoreverses: false),
-                        value: animationAmount
-                    )
+            // Invite sent → one Peki waves, hoping the partner appears.
+            PekiDuo(mood: .hopeful, size: 100)
 
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(Color.pekisLightPurple)
-            }
-            .onAppear {
-                animationAmount = 2
-            }
-
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 Text("Waiting for Partner")
-                    .font(.title.bold())
-                    .foregroundStyle(.white)
+                    .font(PekisFont.title())
+                    .foregroundStyle(.pekisInk)
 
                 Text("Share the invite link with your partner. Once they accept, you'll be connected!")
-                    .font(.body)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(PekisFont.body())
+                    .foregroundStyle(.pekisInkSoft)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
 
             VStack(spacing: 12) {
-                // Share button
                 Button {
                     viewModel.showShareSheet = true
                 } label: {
                     Label("Share Invite Link", systemImage: "square.and.arrow.up")
-                        .font(.headline)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [Color.pekisPurple, Color.pekisLightPurple],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
+                .buttonStyle(SquishyButtonStyle(tint: .pekisCoral))
                 .disabled(viewModel.shareURL == nil)
                 .opacity(viewModel.shareURL == nil ? 0.5 : 1)
 
-                // Retry getting link if not available
                 if viewModel.shareURL == nil {
                     Button {
-                        Task {
-                            await viewModel.fetchShareURL()
-                        }
+                        Task { await viewModel.fetchShareURL() }
                     } label: {
                         HStack(spacing: 8) {
                             if viewModel.isLoading {
-                                ProgressView()
-                                    .tint(.white)
-                                    .scaleEffect(0.8)
+                                ProgressView().tint(.pekisPurple).scaleEffect(0.8)
                             }
                             Label("Get Link", systemImage: "arrow.clockwise")
                         }
-                        .font(.headline)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.white.opacity(0.1))
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                        )
                     }
+                    .buttonStyle(CapsuleButtonStyle(background: .pekisSurfaceSoft, foreground: .pekisInk))
                     .disabled(viewModel.isLoading)
                 }
             }
@@ -407,34 +302,28 @@ private struct WaitingForPartnerView: View {
             Spacer()
 
             Button {
-                Task {
-                    await viewModel.checkPartnerJoined()
-                }
+                Task { await viewModel.checkPartnerJoined() }
             } label: {
                 HStack(spacing: 8) {
                     if viewModel.isLoading {
-                        ProgressView()
-                            .tint(Color.pekisLightPurple)
-                            .scaleEffect(0.8)
+                        ProgressView().tint(.pekisPurple).scaleEffect(0.8)
                     }
                     Text("Check Connection")
                 }
-                .foregroundStyle(Color.pekisLightPurple)
+                .font(PekisFont.headline())
             }
+            .tint(.pekisPurple)
             .disabled(viewModel.isLoading)
-            .padding(.bottom, 32)
+            .padding(.bottom, 16)
 
             Button {
-                withAnimation {
-                    viewModel.step = .createOrJoin
-                }
+                withAnimation { viewModel.step = .createOrJoin }
             } label: {
-                Text("Back")
-                    .foregroundStyle(.white.opacity(0.7))
+                Text("Back").font(PekisFont.body())
             }
+            .tint(.pekisInkSoft)
             .padding(.bottom, 8)
         }
-        .animation(.easeInOut, value: showCopiedToast)
     }
 }
 
@@ -444,26 +333,29 @@ private struct OnboardingCompleteView: View {
     @State private var showConfetti = false
 
     var body: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ZStack {
+            ConfettiView(trigger: showConfetti)
 
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 100))
-                .foregroundStyle(Color.pekisLightPurple)
-                .scaleEffect(showConfetti ? 1.0 : 0.5)
-                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: showConfetti)
+            VStack(spacing: 28) {
+                Spacer()
 
-            VStack(spacing: 12) {
-                Text("You're Connected! 💕")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.white)
+                // The payoff: the two Pekis are now engaged 💍
+                PekiDuo(mood: .engaged, size: 120)
+                    .scaleEffect(showConfetti ? 1.0 : 0.6)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.6), value: showConfetti)
 
-                Text("Your Pekis journey together begins now.")
-                    .font(.body)
-                    .foregroundStyle(.white.opacity(0.7))
+                VStack(spacing: 12) {
+                    Text("You're Connected! 💕")
+                        .font(PekisFont.bigTitle())
+                        .foregroundStyle(.pekisInk)
+
+                    Text("Your Pekis journey together begins now.")
+                        .font(PekisFont.body())
+                        .foregroundStyle(.pekisInkSoft)
+                }
+
+                Spacer()
             }
-
-            Spacer()
         }
         .onAppear {
             HapticManager.notification(type: .success)

@@ -37,25 +37,26 @@ struct WordSearchGameView: View {
                 onExit()
             }) {
                 Image(systemName: "house.fill")
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(.white.opacity(0.1))
-                    .clipShape(Circle())
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.pekisMint)
+                    .padding(11)
+                    .background(Color.pekisSurface, in: Circle())
+                    .overlay(Circle().stroke(Color.pekisHairline, lineWidth: 1))
             }
 
             Spacer()
 
             HStack(spacing: 8) {
                 Image(systemName: "trophy.fill")
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(.pekisSun)
                 Text("\(viewModel.foundWords.count)")
-                    .font(.title3.monospacedDigit())
-                    .foregroundStyle(.white)
+                    .font(.system(size: 18, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.pekisInk)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.white.opacity(0.1))
-            .clipShape(Capsule())
+            .background(Color.pekisSurface, in: Capsule())
+            .overlay(Capsule().stroke(Color.pekisHairline, lineWidth: 1))
         }
     }
 
@@ -88,13 +89,13 @@ struct WordSearchGameView: View {
         )
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.pekisSurface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.pekisHairline, lineWidth: 1)
         )
-        .shadow(color: Color.pekisPurple.opacity(0.2), radius: 18, y: 10)
+        .shadow(color: Color.pekisMint.opacity(0.25), radius: 18, y: 10)
         .onPreferenceChange(GridCellPreferenceKey.self) { preferences in
             for p in preferences {
                 cellFrames[p.coordinate] = p.frame
@@ -108,7 +109,7 @@ struct WordSearchGameView: View {
         let isFound = viewModel.foundCoordinates.contains(coordinate)
 
         return Text(letter)
-            .font(.title3.bold())
+            .font(.system(size: 18, weight: .bold, design: .rounded))
             .frame(maxWidth: .infinity)
             .frame(height: 34)
             .background(
@@ -120,15 +121,15 @@ struct WordSearchGameView: View {
                         )
                 }
             )
-            .background(isSelected ? Color.pekisPurple : (isFound ? Color.green.opacity(0.15) : Color.white.opacity(0.1)))
-            .foregroundStyle(isFound ? Color.green : .white)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(isSelected ? Color.pekisCoral : (isFound ? Color.pekisMint.opacity(0.22) : Color.pekisSurfaceSoft))
+            .foregroundStyle(isSelected ? .white : (isFound ? Color.pekisMint : .pekisInk))
+            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay(
                 Group {
                     if isFound {
                         Rectangle()
                             .frame(height: 2)
-                            .foregroundStyle(Color.green)
+                            .foregroundStyle(Color.pekisMint)
                     }
                 }
             )
@@ -137,8 +138,8 @@ struct WordSearchGameView: View {
     private var wordList: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Find these words")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.8))
+                .font(PekisFont.caption())
+                .foregroundStyle(.pekisInkSoft)
                 .textCase(.uppercase)
             LazyVGrid(columns: wordColumns, spacing: 8) {
                 ForEach(viewModel.puzzle.words, id: \.self) { word in
@@ -148,22 +149,17 @@ struct WordSearchGameView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity)
-        .background(.white.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
+        .cozyCard(accent: .pekisMint, cornerRadius: 24)
     }
 
     private func wordView(for word: String) -> some View {
         let isFound = viewModel.foundWords.contains(word)
-        let backgroundColor = isFound ? Color.white.opacity(0.1) : Color.white.opacity(0.05)
-        let strokeColor = isFound ? Color.green.opacity(0.4) : Color.white.opacity(0.1)
-        let foregroundColor = isFound ? Color.green : Color.white
+        let backgroundColor = isFound ? Color.pekisMint.opacity(0.16) : Color.pekisSurfaceSoft
+        let strokeColor = isFound ? Color.pekisMint.opacity(0.5) : Color.pekisHairline
+        let foregroundColor = isFound ? Color.pekisMint : Color.pekisInk
 
         return Text(word)
-            .font(.subheadline.weight(.semibold))
+            .font(.system(size: 15, weight: .bold, design: .rounded))
             .lineLimit(1)
             .minimumScaleFactor(0.5)
             .padding(.horizontal, 12)
@@ -178,7 +174,7 @@ struct WordSearchGameView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(strokeColor, lineWidth: 1)
             )
-            .strikethrough(isFound, color: .green)
+            .strikethrough(isFound, color: .pekisMint)
     }
 
     private func handleCompletionIfNeeded(force: Bool = false) {

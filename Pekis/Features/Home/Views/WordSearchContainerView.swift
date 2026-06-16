@@ -80,49 +80,26 @@ struct WordSearchContainerView: View {
     }
 
     private var waitingScreen: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 22) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.1), lineWidth: 6)
-                    .frame(width: 120, height: 120)
-
-                Circle()
-                    .trim(from: 0, to: 0.25)
-                    .stroke(Color.pekisPurple, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .frame(width: 120, height: 120)
-                    .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                    .animation(Animation.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
-
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.white)
-            }
-            .onAppear {
-                isAnimating = true
-            }
+            PekiDuo(mood: .hopeful, size: 92)
 
             VStack(spacing: 8) {
                 Text(waitingTitle)
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
+                    .font(PekisFont.title())
+                    .foregroundStyle(.pekisInk)
 
                 Text(waitingSubtitle)
-                    .font(.subheadline)
+                    .font(PekisFont.body())
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.pekisInkSoft)
                     .padding(.horizontal, 24)
             }
 
             if let startSummary {
                 Label(startSummary, systemImage: "icloud.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.pekisLightPurple)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Capsule())
+                    .cozyChip(.pekisMint)
             }
 
             readinessSection
@@ -135,14 +112,9 @@ struct WordSearchContainerView: View {
                 matchmaking.startSinglePlayer()
                 viewModel.startGame()
             }) {
-                Text("Play alone 😶‍🌫️")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(Color.pekisPurple)
-                    .clipShape(Capsule())
+                Label("Play alone", systemImage: "person.fill")
             }
+            .buttonStyle(SquishyButtonStyle(tint: .pekisMint))
 
             Button(action: {
                 countdownTask?.cancel()
@@ -150,47 +122,34 @@ struct WordSearchContainerView: View {
                 onExit()
             }) {
                 Text("Cancel")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.8))
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(Color.white.opacity(0.1))
-                    .clipShape(Capsule())
             }
+            .buttonStyle(CapsuleButtonStyle(background: .pekisSurfaceSoft, foreground: .pekisInk))
             .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            LinearGradient(
-                colors: [Color.pekisBackground, Color.pekisBackground.opacity(0.0)],
-                startPoint: .bottom,
-                endPoint: .top
-            )
-        )
     }
 
     private var countdownView: some View {
         VStack(spacing: 24) {
             VStack(spacing: 8) {
                 Text("Synced Start")
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
+                    .font(PekisFont.headline())
+                    .foregroundStyle(.pekisInk)
 
                 Text("Both devices locked the same CloudKit session.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(PekisFont.body())
+                    .foregroundStyle(.pekisInkSoft)
             }
 
             if let startSummary {
                 Label(startSummary, systemImage: "clock.badge.checkmark.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.pekisLightPurple)
+                    .cozyChip(.pekisMint)
             }
 
             Text("\(countdown)")
                 .font(.system(size: 120, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
-                .shadow(color: .pekisPurple, radius: 20)
+                .foregroundStyle(.pekisCoral)
+                .shadow(color: Color.pekisCoral.opacity(0.4), radius: 18)
                 .transition(.scale.combined(with: .opacity))
                 .id(countdown) // Triggers transition
 
@@ -198,7 +157,6 @@ struct WordSearchContainerView: View {
                 .padding(.horizontal, 20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.pekisBackground)
     }
 
     private var readinessSection: some View {
@@ -253,24 +211,19 @@ struct WordSearchContainerView: View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: isReady ? "checkmark.circle.fill" : "clock.fill")
                 .font(.title3)
-                .foregroundStyle(isReady ? Color.green : Color.white.opacity(0.8))
+                .foregroundStyle(isReady ? .pekisMint : .pekisInkSoft)
 
             Text(title)
-                .font(.headline)
-                .foregroundStyle(.white)
+                .font(PekisFont.headline())
+                .foregroundStyle(.pekisInk)
 
             Text(detail)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(PekisFont.caption())
+                .foregroundStyle(.pekisInkSoft)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color.white.opacity(0.06))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(isReady ? Color.green.opacity(0.45) : Color.white.opacity(0.08), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .cozyCard(accent: isReady ? .pekisMint : .pekisInkSoft, cornerRadius: 20)
     }
 
     private func startCountdown() {

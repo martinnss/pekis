@@ -5,62 +5,59 @@ struct DateRouletteView: View {
     let onExit: () -> Void
 
     var body: some View {
-        VStack(spacing: 32) {
-            header
+        VStack(spacing: 28) {
+            CozyHeader(title: "Date Roulette", tint: .pekisSun, onHome: onExit)
+
             Spacer()
+
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.pekisSurface)
                     .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        Circle().stroke(
+                            AngularGradient(
+                                colors: [.pekisCoral, .pekisSun, .pekisMint, .pekisSky, .pekisBerry, .pekisCoral],
+                                center: .center
+                            ),
+                            lineWidth: 8
+                        )
                     )
-                    .frame(width: 320, height: 320)
-                    .shadow(color: Color.pekisPurple.opacity(0.4), radius: 30, y: 16)
+                    .frame(width: 300, height: 300)
+                    .shadow(color: Color.pekisSun.opacity(0.35), radius: 24, y: 14)
+                    .rotationEffect(.degrees(viewModel.isSpinning ? 360 : 0))
+                    .animation(
+                        viewModel.isSpinning ? .easeInOut(duration: 0.8) : .default,
+                        value: viewModel.isSpinning
+                    )
+
                 Text(viewModel.currentIdea)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(.pekisInk)
                     .multilineTextAlignment(.center)
                     .padding()
-                    .frame(width: 280)
+                    .frame(width: 240)
                     .blur(radius: viewModel.isSpinning ? 3 : 0)
                     .animation(.easeInOut(duration: 0.2), value: viewModel.isSpinning)
             }
+
             Spacer()
-            Button(action: {
+
+            Button {
                 HapticManager.selection()
                 viewModel.spin()
-            }) {
-                Label(viewModel.isSpinning ? "Spinning..." : "Spin the Wheel", systemImage: "die.face.5")
+            } label: {
+                Label(viewModel.isSpinning ? "Spinning…" : "Spin the Wheel", systemImage: "die.face.5.fill")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(CapsuleButtonStyle(background: Color.pekisPurple, foreground: .white))
+            .buttonStyle(SquishyButtonStyle(tint: .pekisSun, foreground: .pekisInk))
             .disabled(viewModel.isSpinning)
-        }
-    }
-
-    private var header: some View {
-        HStack {
-            Button(action: {
-                HapticManager.selection()
-                onExit()
-            }) {
-                Image(systemName: "house.fill")
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(.white.opacity(0.1))
-                    .clipShape(Circle())
-            }
-            Spacer()
-            Text("Date Roulette")
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-            Spacer()
-            Color.clear.frame(width: 44, height: 44)
         }
     }
 }
 
 #Preview {
-    DateRouletteView(onExit: {})
+    ZStack {
+        CozyBackground()
+        DateRouletteView(onExit: {}).padding()
+    }
 }

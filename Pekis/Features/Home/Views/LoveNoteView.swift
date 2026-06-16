@@ -12,15 +12,15 @@ struct LoveNoteView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            header
+        VStack(spacing: 18) {
+            CozyHeader(title: "Love Notes", tint: .pekisBerry, onHome: onExit)
 
-            // Tab selector
             Picker("View", selection: $selectedTab) {
                 Text("Write").tag(0)
                 Text("Received").tag(1)
             }
             .pickerStyle(.segmented)
+            .tint(.pekisBerry)
             .padding(.horizontal)
 
             if selectedTab == 0 {
@@ -32,9 +32,7 @@ struct LoveNoteView: View {
             Spacer()
         }
         .onAppear {
-            Task {
-                await viewModel.fetchNotes()
-            }
+            Task { await viewModel.fetchNotes() }
         }
         .alert("Error", isPresented: $viewModel.showError) {
             Button("OK", role: .cancel) {}
@@ -44,42 +42,48 @@ struct LoveNoteView: View {
     }
 
     private var writeNoteSection: some View {
-        VStack(spacing: 20) {
-            TextEditor(text: $viewModel.note)
-                .frame(height: 280)
-                .padding()
-                .background(.white.opacity(0.9))
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(.pink.opacity(0.3), lineWidth: 1)
-                )
-                .font(.title3)
-                .foregroundStyle(.gray)
+        VStack(spacing: 18) {
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $viewModel.note)
+                    .scrollContentBackground(.hidden)
+                    .frame(height: 260)
+                    .padding(12)
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .foregroundStyle(.pekisInk)
+                    .cozyCard(accent: .pekisBerry)
+
+                if viewModel.note.isEmpty {
+                    Text("Write something sweet…")
+                        .font(.system(size: 18, weight: .medium, design: .rounded))
+                        .foregroundStyle(.pekisInkSoft)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 20)
+                        .allowsHitTesting(false)
+                }
+            }
 
             HStack(spacing: 12) {
-                Button(action: viewModel.copyNote) {
+                Button {
+                    viewModel.copyNote()
+                } label: {
                     Label(
                         viewModel.hasCopied ? "Copied!" : "Copy",
                         systemImage: viewModel.hasCopied ? "checkmark" : "doc.on.doc"
                     )
                 }
-                .buttonStyle(CapsuleButtonStyle(background: .white.opacity(0.2), foreground: .white))
+                .buttonStyle(CapsuleButtonStyle(background: .pekisSurfaceSoft, foreground: .pekisInk))
                 .disabled(viewModel.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                 Button {
-                    Task {
-                        await viewModel.sendNote()
-                    }
+                    Task { await viewModel.sendNote() }
                 } label: {
                     if viewModel.isSending {
-                        ProgressView()
-                            .tint(.white)
+                        ProgressView().tint(.white)
                     } else {
-                        Label("Send to Partner", systemImage: "paperplane.fill")
+                        Label("Send", systemImage: "paperplane.fill")
                     }
                 }
-                .buttonStyle(CapsuleButtonStyle(background: .pink, foreground: .white))
+                .buttonStyle(SquishyButtonStyle(tint: .pekisBerry))
                 .disabled(
                     viewModel.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     || viewModel.isSending
@@ -92,20 +96,18 @@ struct LoveNoteView: View {
         Group {
             if viewModel.receivedNotes.isEmpty {
                 VStack(spacing: 16) {
-                    Image(systemName: "heart.text.square")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.white.opacity(0.3))
+                    PekiMascot(mood: .hopeful, tint: .pekisBerry, size: 90)
                     Text("No notes yet")
-                        .font(.headline)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(PekisFont.headline())
+                        .foregroundStyle(.pekisInk)
                     Text("Send a note to your partner!")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.4))
+                        .font(PekisFont.body())
+                        .foregroundStyle(.pekisInkSoft)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 16) {
+                    LazyVStack(spacing: 14) {
                         ForEach(viewModel.receivedNotes) { note in
                             NoteCard(
                                 note: note,
@@ -118,24 +120,6 @@ struct LoveNoteView: View {
             }
         }
     }
-
-    private var header: some View {
-        HStack {
-            Button(action: onExit) {
-                Image(systemName: "house.fill")
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(.white.opacity(0.2))
-                    .clipShape(Circle())
-            }
-            Spacer()
-            Text("Love Notes")
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-            Spacer()
-            Color.clear.frame(width: 44, height: 44)
-        }
-    }
 }
 
 // MARK: - Note Card
@@ -145,26 +129,36 @@ private struct NoteCard: View {
     let isFromMe: Bool
 
     var body: some View {
-        VStack(alignment: isFromMe ? .trailing : .leading, spacing: 8) {
+        VStack(alignment: isFromMe ? .trailing : .leading, spacing: 6) {
             HStack {
                 if isFromMe { Spacer() }
                 Text(note.content)
-                    .font(.body)
-                    .foregroundStyle(isFromMe ? .white : .primary)
-                    .padding()
-                    .background(isFromMe ? Color.pink : Color.white.opacity(0.9))
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .font(PekisFont.body())
+                    .foregroundStyle(isFromMe ? .white : .pekisInk)
+                    .padding(14)
+                    .background(
+                        isFromMe ? Color.pekisBerry : Color.pekisSurface,
+                        in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(Color.pekisHairline, lineWidth: isFromMe ? 0 : 1)
+                    )
+                    .shadow(color: (isFromMe ? Color.pekisBerry : Color.pekisInk).opacity(0.12), radius: 8, y: 4)
                 if !isFromMe { Spacer() }
             }
 
             Text(note.formattedDate)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.pekisInkSoft)
                 .padding(.horizontal, 8)
         }
     }
 }
 
 #Preview {
-    LoveNoteView(cloudKitService: MockCloudKitService(), onExit: {})
+    ZStack {
+        CozyBackground()
+        LoveNoteView(cloudKitService: MockCloudKitService(), onExit: {}).padding()
+    }
 }

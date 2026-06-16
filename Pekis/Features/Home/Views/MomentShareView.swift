@@ -12,16 +12,16 @@ struct MomentShareView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            header
+        VStack(spacing: 18) {
+            CozyHeader(title: "Daily Moment", tint: .pekisCoral, onHome: onExit)
             promptBanner
 
-            Spacer(minLength: 16)
+            Spacer(minLength: 12)
 
             if viewModel.isLoadingMoments && !viewModel.isPosted {
                 ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.5)
+                    .tint(.pekisCoral)
+                    .scaleEffect(1.4)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.isPosted {
                 postedState
@@ -44,49 +44,29 @@ struct MomentShareView: View {
         }
     }
 
-    // MARK: - Header
-
-    private var header: some View {
-        HStack {
-            Button(action: onExit) {
-                Image(systemName: "house.fill")
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(.white.opacity(0.2))
-                    .clipShape(Circle())
-            }
-            Spacer()
-            Text("Daily Moment")
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-            Spacer()
-            Color.clear.frame(width: 44, height: 44)
-        }
-    }
-
-    // MARK: - Prompt Banner
-
     private var promptBanner: some View {
-        Text("✨ \(viewModel.prompt)")
-            .font(.callout.weight(.bold))
-            .foregroundStyle(.yellow.opacity(0.9))
-            .padding(.horizontal, 18)
+        Label(viewModel.prompt, systemImage: "sparkles")
+            .font(PekisFont.caption())
+            .foregroundStyle(.pekisCoral)
+            .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(Color.yellow.opacity(0.2))
-            .clipShape(Capsule())
+            .background(Color.pekisCoral.opacity(0.14), in: Capsule())
     }
 
-    // MARK: - Capture State (not yet posted)
+    // MARK: - Capture State
 
     private var captureState: some View {
         VStack(spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .stroke(style: StrokeStyle(lineWidth: 2, dash: [8]))
-                    .foregroundStyle(.white.opacity(0.3))
+                    .fill(Color.pekisSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 32, style: .continuous)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [9]))
+                            .foregroundStyle(Color.pekisCoral.opacity(0.5))
+                    )
                     .frame(height: 360)
-                    .background(Color.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+                    .shadow(color: Color.pekisCoral.opacity(0.15), radius: 16, y: 10)
 
                 if let image = viewModel.myImage {
                     Image(uiImage: image)
@@ -96,11 +76,10 @@ struct MomentShareView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                 } else {
                     VStack(spacing: 12) {
-                        Image(systemName: "photo.on.rectangle")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.white.opacity(0.7))
+                        CozyIconBadge(systemName: "photo.on.rectangle", tint: .pekisCoral, size: 70)
                         Text("No photo selected")
-                            .foregroundStyle(.white.opacity(0.7))
+                            .font(PekisFont.body())
+                            .foregroundStyle(.pekisInkSoft)
                     }
                 }
             }
@@ -111,19 +90,17 @@ struct MomentShareView: View {
                     matching: .images,
                     preferredItemEncoding: .automatic
                 ) {
-                    Label("Take or Choose Photo", systemImage: "camera")
+                    Label("Take or Choose Photo", systemImage: "camera.fill")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(CapsuleButtonStyle(background: .white, foreground: .pink))
+                .buttonStyle(SquishyButtonStyle(tint: .pekisCoral))
             } else {
                 HStack(spacing: 12) {
                     Button("Retake") {
                         pickerItem = nil
                         viewModel.resetPhoto()
                     }
-                    .buttonStyle(
-                        CapsuleButtonStyle(background: .white, foreground: .pink, borderColor: .pink)
-                    )
+                    .buttonStyle(CapsuleButtonStyle(background: .pekisSurfaceSoft, foreground: .pekisInk))
 
                     Button {
                         Task { await viewModel.postMoment() }
@@ -137,32 +114,32 @@ struct MomentShareView: View {
                             Text("Post Moment")
                         }
                     }
-                    .buttonStyle(CapsuleButtonStyle(background: .pink, foreground: .white))
+                    .buttonStyle(SquishyButtonStyle(tint: .pekisCoral))
                     .disabled(viewModel.isUploading)
                 }
             }
         }
     }
 
-    // MARK: - Posted State (shows real partner photo)
+    // MARK: - Posted State
 
     private var postedState: some View {
         VStack(spacing: 16) {
+            PekiMascot(mood: viewModel.partnerPosted ? .love : .hopeful,
+                       tint: .pekisCoral, size: 76)
+
             Text(viewModel.partnerPosted
                  ? "Both of you shared a moment today! 💕"
                  : "You shared! Waiting for partner's moment…")
-                .font(.subheadline)
+                .font(PekisFont.body())
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.pekisInk)
                 .padding(.horizontal)
 
             HStack(spacing: 16) {
-                // My photo
                 if let image = viewModel.myImage {
                     momentCard(image: image, label: "You • Today")
                 }
-
-                // Partner's photo or placeholder
                 if viewModel.partnerPosted, let partnerImage = viewModel.partnerImage {
                     momentCard(image: partnerImage, label: "Partner • Today")
                 } else {
@@ -172,13 +149,7 @@ struct MomentShareView: View {
             .padding(.horizontal, 4)
 
             Button("Back to Dashboard", action: onExit)
-                .buttonStyle(
-                    CapsuleButtonStyle(
-                        background: .white.opacity(0.01),
-                        foreground: .white,
-                        borderColor: .white
-                    )
-                )
+                .buttonStyle(CapsuleButtonStyle(background: .pekisSurfaceSoft, foreground: .pekisInk))
         }
     }
 
@@ -188,38 +159,37 @@ struct MomentShareView: View {
                 .resizable()
                 .scaledToFill()
                 .frame(maxWidth: .infinity)
-                .frame(height: 220)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .frame(height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             Text(label)
-                .font(.caption.bold())
-                .foregroundStyle(.white.opacity(0.8))
+                .font(PekisFont.caption())
+                .foregroundStyle(.pekisInkSoft)
         }
     }
 
     private var partnerPlaceholder: some View {
-        VStack(alignment: .center, spacing: 12) {
+        VStack(spacing: 12) {
             if viewModel.isLoadingMoments {
-                ProgressView().tint(.white)
+                ProgressView().tint(.pekisCoral)
             } else {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.largeTitle)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.pekisInkSoft)
                 Text("Partner hasn't posted yet")
-                    .font(.caption)
+                    .font(PekisFont.caption())
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.pekisInkSoft)
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 220)
-        .background(.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .frame(height: 200)
+        .background(Color.pekisSurfaceSoft, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 }
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
-        MomentShareView(cloudKitService: CloudKitService(), onExit: {})
+        CozyBackground()
+        MomentShareView(cloudKitService: CloudKitService(), onExit: {}).padding()
     }
 }

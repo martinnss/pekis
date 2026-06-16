@@ -15,8 +15,7 @@ struct ThisOrThatView: View {
 
             if viewModel.isLoading {
                 Spacer()
-                ProgressView()
-                    .tint(.white)
+                ProgressView().tint(.pekisPurple)
                 Spacer()
             } else {
                 Spacer()
@@ -26,9 +25,7 @@ struct ThisOrThatView: View {
             }
         }
         .onAppear {
-            Task {
-                await viewModel.loadAnswers()
-            }
+            Task { await viewModel.loadAnswers() }
         }
     }
 
@@ -37,12 +34,12 @@ struct ThisOrThatView: View {
             preferenceButton(index: 0)
 
             Text("OR")
-                .font(.headline)
-                .foregroundStyle(.white.opacity(0.7))
+                .font(PekisFont.headline())
+                .foregroundStyle(.pekisInkSoft)
+                .padding(.vertical, 2)
 
             preferenceButton(index: 1)
 
-            // Partner's answer reveal
             if viewModel.selectedOption != nil && viewModel.partnerAnswer != nil {
                 partnerRevealSection
             } else if viewModel.selectedOption != nil && viewModel.partnerAnswer == nil {
@@ -54,47 +51,46 @@ struct ThisOrThatView: View {
     private var partnerRevealSection: some View {
         VStack(spacing: 12) {
             if viewModel.showReveal {
-                HStack(spacing: 8) {
-                    Image(systemName: viewModel.isMatch ? "heart.fill" : "heart")
-                        .foregroundStyle(viewModel.isMatch ? .green : .orange)
-                    Text(viewModel.isMatch ? "You both chose the same!" : "Different choices!")
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                VStack(spacing: 12) {
+                    PekiMascot(mood: viewModel.isMatch ? .love : .happy, tint: viewModel.isMatch ? .pekisBerry : .pekisSun, size: 72)
+                    HStack(spacing: 8) {
+                        Image(systemName: viewModel.isMatch ? "heart.fill" : "sparkles")
+                            .foregroundStyle(viewModel.isMatch ? .pekisBerry : .pekisSun)
+                        Text(viewModel.isMatch ? "You both chose the same!" : "Different choices!")
+                            .font(PekisFont.headline())
+                            .foregroundStyle(.pekisInk)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        (viewModel.isMatch ? Color.pekisBerry : Color.pekisSun).opacity(0.16),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
                 }
-                .padding()
-                .background(viewModel.isMatch ? Color.green.opacity(0.2) : Color.orange.opacity(0.2))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .transition(.scale.combined(with: .opacity))
             } else {
                 Button {
-                    withAnimation(.spring()) {
-                        viewModel.revealPartnerAnswer()
-                    }
+                    withAnimation(.spring()) { viewModel.revealPartnerAnswer() }
                 } label: {
                     Label("Reveal Partner's Choice", systemImage: "eye.fill")
-                        .font(.headline)
-                        .padding()
-                        .background(Color.indigo.opacity(0.5))
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(SquishyButtonStyle(tint: .pekisPurple))
             }
         }
-        .padding(.top, 16)
+        .padding(.top, 12)
     }
 
     private var waitingForPartnerSection: some View {
         HStack(spacing: 8) {
-            ProgressView()
-                .tint(.white)
-            Text("Waiting for partner...")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
+            ProgressView().tint(.pekisPurple)
+            Text("Waiting for partner…")
+                .font(PekisFont.body())
+                .foregroundStyle(.pekisInkSoft)
         }
         .padding()
-        .background(Color.white.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.top, 16)
+        .background(Color.pekisSurfaceSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.top, 12)
     }
 
     private func preferenceButton(index: Int) -> some View {
@@ -110,32 +106,32 @@ struct ThisOrThatView: View {
         } label: {
             HStack {
                 Text(title)
-                    .font(.title3.weight(.bold))
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
                 Spacer()
-
                 HStack(spacing: 8) {
                     if isMyChoice {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.pekisMint)
                     }
                     if isPartnerChoice {
-                        Image(systemName: "heart.circle.fill")
-                            .foregroundStyle(.pink)
+                        Image(systemName: "heart.circle.fill").foregroundStyle(.pekisBerry)
                     }
                 }
             }
             .padding()
             .frame(maxWidth: .infinity)
-            .background(isMyChoice ? Color.white : Color.white.opacity(0.1))
-            .foregroundStyle(isMyChoice ? Color.purple : Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .foregroundStyle(isMyChoice ? .white : .pekisInk)
+            .background(
+                (isMyChoice ? Color.pekisPurple : Color.pekisSurface),
+                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .stroke(
-                        isPartnerChoice ? Color.pink : Color.white.opacity(0.3),
+                        isPartnerChoice ? Color.pekisBerry : Color.pekisHairline,
                         lineWidth: isPartnerChoice ? 3 : 1
                     )
             )
+            .shadow(color: (isMyChoice ? Color.pekisPurple : Color.pekisInk).opacity(0.12), radius: 10, y: 6)
         }
         .disabled(viewModel.selectedOption != nil)
     }
@@ -145,35 +141,20 @@ struct ThisOrThatView: View {
             Label("Next Question", systemImage: "arrow.right")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(CapsuleButtonStyle(background: .indigo, foreground: .white))
+        .buttonStyle(SquishyButtonStyle(tint: .pekisPurple))
     }
 
     private var header: some View {
-        HStack {
-            Button(action: onExit) {
-                Image(systemName: "house.fill")
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(.white.opacity(0.2))
-                    .clipShape(Circle())
-            }
-            Spacer()
-            Text("This or That")
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-            Spacer()
-            // Progress indicator
+        CozyHeader(title: "This or That", tint: .pekisPurple, onHome: onExit) {
             Text("\(viewModel.currentIndex + 1)/\(AppContent.thisOrThatPairs.count)")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.7))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(.white.opacity(0.2))
-                .clipShape(Capsule())
+                .cozyChip(.pekisPurple)
         }
     }
 }
 
 #Preview {
-    ThisOrThatView(cloudKitService: MockCloudKitService(), onExit: {})
+    ZStack {
+        CozyBackground()
+        ThisOrThatView(cloudKitService: MockCloudKitService(), onExit: {}).padding()
+    }
 }

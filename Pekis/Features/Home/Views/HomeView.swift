@@ -12,10 +12,7 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            Color.pekisBackground.ignoresSafeArea()
-
-            // Ambient background blobs
-            BackgroundBlobsView()
+            CozyBackground()
 
             mainContent(viewModel: viewModel)
         }
