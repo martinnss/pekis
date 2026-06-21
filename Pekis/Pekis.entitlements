@@ -7,8 +7,8 @@
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>$(PEKIS_CLOUDKIT_CONTAINER_ID)</string>
-		<string>iCloud.PekisGame</string>
-		<string>iCloud.molivares.Pekis</string>
+		<string>$(PEKIS_CLOUDKIT_CONTAINER_LEGACY_A)</string>
+		<string>$(PEKIS_CLOUDKIT_CONTAINER_LEGACY_B)</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>

@@ -37,12 +37,7 @@ Long-distance relationships are hard. Texting isn't always enough. Pekis aims to
 
 ## 📸 Screenshots
 
-| Dashboard | Moment Share | Word Search |
-|:---:|:---:|:---:|
-| *![Dashboard](Assets.xcassets/DashboardCouple.imageset/Dashboard.png)* | *![Moment Share](Assets.xcassets/AppIcon.appiconset/Icon.png)* | *![Word Search](Assets.xcassets/AppIcon.appiconset/Icon.png)* |
-| *Your shared home* | *Share your world* | *Play together* |
-
-*(Note: Screenshots are placeholders. Please run the app to see the UI in action!)*
+Screenshots coming soon. Clone the repo and run on a simulator to see the UI in action (`Cmd + R` in Xcode).
 
 ---
 

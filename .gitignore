@@ -43,6 +43,10 @@ xcuserdata/
 *.xccheckout
 *.xcscmblueprint
 
+## Shared schemes (xcshareddata/xcschemes/) ARE intentionally tracked.
+## Only user-private schemes go here.
+xcuserdata/**/*.xcscheme
+
 ## Playgrounds
 timeline.xctimeline
 playground.xcworkspace
@@ -210,7 +214,6 @@ Screenshots/
 
 Derived/
 project.yml.user
-*.xcodeproj/xcshareddata/xcschemes/*.xcscheme
 
 # ---------------------------------
 # End of .gitignore
