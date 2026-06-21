@@ -436,10 +436,20 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
     // MARK: - Sharing
 
     func getOrCreateShare() async throws -> CKShare {
-        // The couple may have been served from cache (no CKRecord in hand) after
-        // an offline launch or a transient setup error. Re-fetch the live record
-        // before giving up so the invite link doesn't silently fail.
-        if coupleRecord == nil { _ = try? await fetchOwnedCouple() }
+        // Ensure we have a live CKRecord — the couple may have been loaded from
+        // cache with no in-memory CKRecord (e.g. after an app restart).
+        if coupleRecord == nil {
+            // 1. Try a zone query first (the normal path).
+            _ = try? await fetchOwnedCouple()
+        }
+        if coupleRecord == nil, let cachedID = couple?.id {
+            // 2. Fall back to a direct record fetch by the known UUID so a
+            //    transient zone-query failure doesn't permanently lock the button.
+            let recordID = CKRecord.ID(recordName: cachedID, zoneID: coupleZoneID)
+            if let record = try? await privateDatabase.record(for: recordID) {
+                self.coupleRecord = record
+            }
+        }
         guard let existingCoupleRecord = coupleRecord else { throw CloudKitError.coupleNotFound }
 
         // Check if share already exists and is valid
@@ -661,6 +671,15 @@ private extension CloudKitService {
     }
 
     func saveUpdatedCouple(_ updatedCouple: Couple) async throws {
+        // Re-fetch the server record when we don't have it in memory so we preserve
+        // the changeTag and CKShare chaining. Without this, CloudKit rejects the save
+        // with "SaveSemantics is failIfExists, existing record has chaining".
+        if coupleRecord == nil {
+            if (try? await fetchOwnedCouple()) == nil {
+                _ = try? await fetchSharedCouple()
+            }
+        }
+
         let record: CKRecord
         if let existing = coupleRecord {
             record = existing
