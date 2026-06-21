@@ -1,29 +1,6 @@
 import AppIntents
 import WidgetKit
 
-/// Themes the user can pick from in the widget's edit screen.
-enum CountdownTheme: String, AppEnum {
-    case aurora
-    case sunset
-    case rose
-    case midnight
-    case ocean
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        "Theme"
-    }
-
-    static var caseDisplayRepresentations: [CountdownTheme: DisplayRepresentation] {
-        [
-            .aurora: "Aurora",
-            .sunset: "Sunset",
-            .rose: "Rose",
-            .midnight: "Midnight",
-            .ocean: "Ocean"
-        ]
-    }
-}
-
 /// The widget's user-facing configuration. Long-pressing the widget → Edit
 /// surfaces every one of these parameters.
 ///
@@ -40,9 +17,6 @@ struct CountdownConfigIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "Label", default: "Until we reunite")
     var label: String
-
-    @Parameter(title: "Theme", default: .aurora)
-    var theme: CountdownTheme
 
     @Parameter(title: "Show partner's name", default: true)
     var showPartnerName: Bool

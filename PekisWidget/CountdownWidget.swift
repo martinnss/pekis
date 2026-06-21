@@ -91,7 +91,7 @@ struct PekisCountdownWidget: Widget {
         ) { entry in
             CountdownWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    WidgetTheme.palette(for: entry.configuration.theme).background
+                    WidgetPalette.background
                 }
         }
         .configurationDisplayName("Together Countdown")

@@ -1,17 +1,15 @@
 import WidgetKit
 import SwiftUI
 
-/// Routes each widget family to a layout tuned for its size and rendering mode.
+/// Routes each widget family to its layout.
 struct CountdownWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: CountdownEntry
 
-    private var theme: WidgetTheme { WidgetTheme.palette(for: entry.configuration.theme) }
-
     var body: some View {
         switch family {
         case .systemMedium:
-            MediumCountdownView(entry: entry, theme: theme)
+            MediumCountdownView(entry: entry)
         case .accessoryRectangular:
             AccessoryRectangularView(entry: entry)
         case .accessoryCircular:
@@ -19,142 +17,300 @@ struct CountdownWidgetView: View {
         case .accessoryInline:
             AccessoryInlineView(entry: entry)
         default:
-            SmallCountdownView(entry: entry, theme: theme)
+            SmallCountdownView(entry: entry)
         }
     }
 }
 
-// MARK: - Shared building blocks
+// MARK: - Static Widget Mascot
 
-/// A large, soft-shadowed numeral with a subtle top-down sheen so it reads as
-/// a sculpted object rather than flat text.
-private struct CountdownNumber: View {
-    let value: Int
-    let size: CGFloat
+/// A fully static, self-contained Peki cat for widget rendering.
+/// No @State, no UIColor, no external dependencies.
+private struct WidgetCat: View {
+    var size: CGFloat = 72
+    /// heart eyes instead of normal eyes
+    var celebrate: Bool = false
 
-    var body: some View {
-        Text("\(value)")
-            .font(.system(size: size, weight: .heavy, design: .rounded))
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [.white, .white.opacity(0.82)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 3)
-            .minimumScaleFactor(0.5)
-            .lineLimit(1)
-            .contentTransition(.numericText())
-    }
-}
-
-/// Uppercase, letter-spaced caption used for labels — small typographic touch
-/// that keeps the layout from feeling generic.
-private struct Eyebrow: View {
-    let text: String
-    let color: Color
-
-    var body: some View {
-        Text(text.uppercased())
-            .font(.system(size: 10, weight: .bold, design: .rounded))
-            .tracking(1.4)
-            .foregroundStyle(color)
-            .lineLimit(1)
-    }
-}
-
-private struct ProgressRing: View {
-    let progress: Double
-    let theme: WidgetTheme
-    let lineWidth: CGFloat
+    private let body1 = WidgetPalette.coralLight
+    private let body2 = WidgetPalette.coral
+    private let bodyD = WidgetPalette.coralDark
+    private let berry = WidgetPalette.berry
+    private let ink   = Color(red: 0.227, green: 0.18, blue: 0.212)
 
     var body: some View {
         ZStack {
-            Circle()
-                .stroke(theme.ringTrack, lineWidth: lineWidth)
-            Circle()
-                .trim(from: 0, to: max(0.02, progress))
-                .stroke(
-                    AngularGradient(
-                        colors: [theme.accent.opacity(0.7), theme.accent, .white],
-                        center: .center
-                    ),
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .shadow(color: theme.accent.opacity(0.5), radius: 4)
+            tail
+            ears
+            catBody
+            face
+            paws
         }
+        .frame(width: size, height: size)
+    }
+
+    // MARK: Tail
+
+    private var tail: some View {
+        CatTailShape()
+            .stroke(
+                LinearGradient(colors: [body2, body1], startPoint: .bottom, endPoint: .top),
+                style: StrokeStyle(lineWidth: size * 0.12, lineCap: .round)
+            )
+            .frame(width: size * 0.5, height: size * 0.5)
+            .offset(x: size * 0.34, y: size * 0.18)
+    }
+
+    // MARK: Ears
+
+    private var ears: some View {
+        HStack(spacing: size * 0.30) {
+            singleEar.rotationEffect(.degrees(-8), anchor: .bottom)
+            singleEar.scaleEffect(x: -1).rotationEffect(.degrees(8), anchor: .bottom)
+        }
+        .offset(y: -size * 0.27)
+    }
+
+    private var singleEar: some View {
+        CatEarShape()
+            .fill(body2)
+            .overlay(
+                CatEarShape()
+                    .fill(berry.opacity(0.4))
+                    .scaleEffect(0.5, anchor: .bottom)
+            )
+            .overlay(CatEarShape().stroke(bodyD.opacity(0.4), lineWidth: 1.5))
+            .frame(width: size * 0.26, height: size * 0.28)
+    }
+
+    // MARK: Body
+
+    private var catBody: some View {
+        Ellipse()
+            .fill(LinearGradient(colors: [body1, body2], startPoint: .top, endPoint: .bottom))
+            .frame(width: size * 0.82, height: size * 0.78)
+            .overlay(Ellipse().stroke(bodyD.opacity(0.4), lineWidth: 1.5))
+            .offset(y: size * 0.07)
+            .shadow(color: body2.opacity(0.25), radius: 8, y: 6)
+    }
+
+    // MARK: Face
+
+    private var face: some View {
+        ZStack {
+            whiskers
+
+            HStack(spacing: size * 0.20) {
+                leftEye
+                rightEye
+            }
+            .offset(y: -size * 0.01)
+
+            // Blush cheeks
+            HStack(spacing: size * 0.44) {
+                blush
+                blush
+            }
+            .offset(y: size * 0.12)
+
+            // Heart nose (upside-down)
+            Image(systemName: "heart.fill")
+                .font(.system(size: size * 0.07))
+                .foregroundStyle(berry)
+                .rotationEffect(.degrees(180))
+                .offset(y: size * 0.10)
+        }
+        .offset(y: size * 0.02)
+    }
+
+    @ViewBuilder
+    private var leftEye: some View {
+        if celebrate {
+            Image(systemName: "heart.fill")
+                .font(.system(size: size * 0.16))
+                .foregroundStyle(berry)
+        } else {
+            ZStack {
+                Capsule().fill(ink).frame(width: size * 0.11, height: size * 0.14)
+                Circle().fill(.white).frame(width: size * 0.04, height: size * 0.04)
+                    .offset(x: size * 0.02, y: -size * 0.03)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var rightEye: some View {
+        if celebrate {
+            Image(systemName: "heart.fill")
+                .font(.system(size: size * 0.16))
+                .foregroundStyle(berry)
+        } else {
+            ZStack {
+                Capsule().fill(ink).frame(width: size * 0.11, height: size * 0.14)
+                Circle().fill(.white).frame(width: size * 0.04, height: size * 0.04)
+                    .offset(x: size * 0.02, y: -size * 0.03)
+            }
+        }
+    }
+
+    private var blush: some View {
+        Ellipse()
+            .fill(berry.opacity(0.3))
+            .frame(width: size * 0.13, height: size * 0.085)
+    }
+
+    private var whiskers: some View {
+        HStack(spacing: size * 0.30) {
+            CatWhiskerShape()
+                .stroke(ink.opacity(0.45), style: StrokeStyle(lineWidth: size * 0.012, lineCap: .round))
+                .frame(width: size * 0.24, height: size * 0.16)
+            CatWhiskerShape()
+                .stroke(ink.opacity(0.45), style: StrokeStyle(lineWidth: size * 0.012, lineCap: .round))
+                .scaleEffect(x: -1)
+                .frame(width: size * 0.24, height: size * 0.16)
+        }
+        .offset(y: size * 0.12)
+    }
+
+    // MARK: Paws
+
+    private var paws: some View {
+        HStack {
+            Ellipse()
+                .fill(bodyD)
+                .frame(width: size * 0.18, height: size * 0.14)
+                .overlay(Ellipse().stroke(bodyD.opacity(0.4), lineWidth: 1.5))
+                .rotationEffect(.degrees(-6), anchor: .top)
+            Spacer()
+            Ellipse()
+                .fill(bodyD)
+                .frame(width: size * 0.18, height: size * 0.14)
+                .overlay(Ellipse().stroke(bodyD.opacity(0.4), lineWidth: 1.5))
+                .rotationEffect(.degrees(6), anchor: .top)
+        }
+        .frame(width: size * 0.78)
+        .offset(y: size * 0.26)
     }
 }
 
+// MARK: - Shapes
+
+private struct CatEarShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        p.addQuadCurve(
+            to: CGPoint(x: rect.midX + rect.width * 0.12, y: rect.minY),
+            control: CGPoint(x: rect.minX + rect.width * 0.18, y: rect.minY + rect.height * 0.1)
+        )
+        p.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.maxY),
+            control: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.45)
+        )
+        p.closeSubpath()
+        return p
+    }
+}
+
+private struct CatWhiskerShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let ox = rect.maxX
+        let my = rect.midY
+        p.move(to: CGPoint(x: ox, y: my))
+        p.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.1))
+        p.move(to: CGPoint(x: ox, y: my))
+        p.addLine(to: CGPoint(x: rect.minX, y: my))
+        p.move(to: CGPoint(x: ox, y: my))
+        p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - rect.height * 0.1))
+        return p
+    }
+}
+
+private struct CatTailShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        p.addCurve(
+            to: CGPoint(x: rect.maxX * 0.85, y: rect.minY + rect.height * 0.18),
+            control1: CGPoint(x: rect.maxX * 0.6, y: rect.maxY),
+            control2: CGPoint(x: rect.maxX, y: rect.midY)
+        )
+        return p
+    }
+}
+
+// MARK: - Helpers
+
 private func formattedTarget(_ date: Date) -> String {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "EEE, MMM d"
-    return formatter.string(from: date)
+    let f = DateFormatter()
+    f.dateFormat = "EEE, MMM d"
+    return f.string(from: date)
 }
 
 // MARK: - Small (home screen)
 
 private struct SmallCountdownView: View {
     let entry: CountdownEntry
-    let theme: WidgetTheme
 
     var body: some View {
         if let days = entry.daysRemaining {
             VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Eyebrow(text: entry.configuration.label, color: theme.secondaryText)
-                    Spacer(minLength: 0)
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(theme.accent)
-                }
+                // Label
+                Text(entry.configuration.label.uppercased())
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .tracking(1.2)
+                    .foregroundStyle(WidgetPalette.inkSoft)
+                    .lineLimit(1)
 
                 Spacer(minLength: 4)
 
                 if days == 0 {
-                    Text("Today")
-                        .font(.system(size: 38, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 3)
-                        .minimumScaleFactor(0.5)
+                    Text("Today! 🎉")
+                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                        .foregroundStyle(WidgetPalette.purple)
+                        .minimumScaleFactor(0.6)
                         .lineLimit(1)
                 } else {
-                    HStack(alignment: .lastTextBaseline, spacing: 4) {
-                        CountdownNumber(value: days, size: 56)
+                    HStack(alignment: .lastTextBaseline, spacing: 3) {
+                        Text("\(days)")
+                            .font(.system(size: 52, weight: .heavy, design: .rounded))
+                            .foregroundStyle(WidgetPalette.purple)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .contentTransition(.numericText())
                         Text(days == 1 ? "day" : "days")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.secondaryText)
-                            .padding(.bottom, 8)
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundStyle(WidgetPalette.inkSoft)
+                            .padding(.bottom, 7)
                     }
                 }
 
                 Spacer(minLength: 4)
 
-                if entry.configuration.showPartnerName,
-                   let name = entry.snapshot.partnerName, !name.isEmpty,
-                   !entry.configuration.useCustomDate {
-                    Text("with \(name)")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(theme.secondaryText)
-                        .lineLimit(1)
-                } else if let target = entry.targetDate {
-                    Text(formattedTarget(target))
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(theme.secondaryText)
-                        .lineLimit(1)
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                if let progress = entry.progress {
-                    ProgressRing(progress: progress, theme: theme, lineWidth: 4)
-                        .frame(width: 26, height: 26)
-                        .offset(y: 22)
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        if entry.configuration.showPartnerName,
+                           let name = entry.snapshot.partnerName, !name.isEmpty,
+                           !entry.configuration.useCustomDate {
+                            Text("with \(name)")
+                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                .foregroundStyle(WidgetPalette.coral)
+                                .lineLimit(1)
+                        }
+                        if let target = entry.targetDate {
+                            Text(formattedTarget(target))
+                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .foregroundStyle(WidgetPalette.inkSoft)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    WidgetCat(size: 44, celebrate: entry.daysRemaining == 0)
+                        .offset(x: 6, y: 10)
                 }
             }
         } else {
-            EmptyStateView(theme: theme, compact: true)
+            SmallEmptyStateView()
         }
     }
 }
@@ -163,104 +319,108 @@ private struct SmallCountdownView: View {
 
 private struct MediumCountdownView: View {
     let entry: CountdownEntry
-    let theme: WidgetTheme
 
     var body: some View {
         if let days = entry.daysRemaining {
-            HStack(spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Eyebrow(text: entry.configuration.label, color: theme.secondaryText)
+            HStack(spacing: 0) {
+                // Left: text content
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(entry.configuration.label.uppercased())
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .tracking(1.2)
+                        .foregroundStyle(WidgetPalette.inkSoft)
+                        .lineLimit(1)
 
                     if entry.configuration.showPartnerName,
                        let name = entry.snapshot.partnerName, !name.isEmpty,
                        !entry.configuration.useCustomDate {
                         Text("with \(name)")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.accent)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(WidgetPalette.coral)
                             .lineLimit(1)
                     }
 
                     if days == 0 {
-                        Text("Today 🎉")
-                            .font(.system(size: 34, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.white)
-                            .minimumScaleFactor(0.5)
+                        Text("Today! 🎉")
+                            .font(.system(size: 30, weight: .heavy, design: .rounded))
+                            .foregroundStyle(WidgetPalette.purple)
+                            .minimumScaleFactor(0.6)
                             .lineLimit(1)
                     } else {
-                        HStack(alignment: .lastTextBaseline, spacing: 6) {
-                            CountdownNumber(value: days, size: 60)
+                        HStack(alignment: .lastTextBaseline, spacing: 4) {
+                            Text("\(days)")
+                                .font(.system(size: 56, weight: .heavy, design: .rounded))
+                                .foregroundStyle(WidgetPalette.purple)
+                                .minimumScaleFactor(0.5)
+                                .lineLimit(1)
+                                .contentTransition(.numericText())
                             Text(days == 1 ? "day" : "days")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                .foregroundStyle(theme.secondaryText)
-                                .padding(.bottom, 9)
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundStyle(WidgetPalette.inkSoft)
+                                .padding(.bottom, 8)
                         }
                     }
 
                     Spacer(minLength: 0)
 
                     if let target = entry.targetDate {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 5) {
                             Image(systemName: "calendar")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.system(size: 10, weight: .bold))
                             Text(formattedTarget(target))
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
                         }
-                        .foregroundStyle(theme.secondaryText)
+                        .foregroundStyle(WidgetPalette.inkSoft)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer(minLength: 0)
-
-                ZStack {
-                    if let progress = entry.progress {
-                        ProgressRing(progress: progress, theme: theme, lineWidth: 8)
-                        VStack(spacing: 1) {
-                            Text("\(Int(progress * 100))%")
-                                .font(.system(size: 20, weight: .heavy, design: .rounded))
-                                .foregroundStyle(.white)
-                            Text("there")
-                                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                                .foregroundStyle(theme.secondaryText)
-                        }
-                    } else {
-                        Circle()
-                            .fill(.white.opacity(0.12))
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 34))
-                            .foregroundStyle(theme.accent)
-                            .shadow(color: theme.accent.opacity(0.6), radius: 8)
-                    }
-                }
-                .frame(width: 96, height: 96)
+                // Right: mascot
+                WidgetCat(size: 84, celebrate: days == 0)
+                    .frame(width: 96)
+                    .padding(.trailing, 4)
             }
+            .padding(.vertical, 2)
         } else {
-            EmptyStateView(theme: theme, compact: false)
+            MediumEmptyStateView()
         }
     }
 }
 
-// MARK: - Empty state
+// MARK: - Empty states
 
-private struct EmptyStateView: View {
-    let theme: WidgetTheme
-    let compact: Bool
-
+private struct SmallEmptyStateView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "calendar.badge.plus")
-                .font(.system(size: compact ? 28 : 34, weight: .semibold))
-                .foregroundStyle(theme.accent)
-                .shadow(color: theme.accent.opacity(0.5), radius: 8)
+        VStack(alignment: .leading, spacing: 6) {
+            WidgetCat(size: 48, celebrate: false)
             Spacer(minLength: 0)
-            Text("Set your date")
-                .font(.system(size: compact ? 17 : 20, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-            Text("Open Pekis to pick the day you'll be together.")
-                .font(.system(size: compact ? 11 : 13, weight: .medium, design: .rounded))
-                .foregroundStyle(theme.secondaryText)
-                .lineLimit(compact ? 2 : 3)
+            Text("Set a date")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(WidgetPalette.ink)
+            Text("Open Pekis to start your countdown.")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(WidgetPalette.inkSoft)
+                .lineLimit(2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+}
+
+private struct MediumEmptyStateView: View {
+    var body: some View {
+        HStack(spacing: 16) {
+            WidgetCat(size: 72, celebrate: false)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Set your next visit")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(WidgetPalette.ink)
+                Text("Open Pekis and tap the countdown card to pick a date.")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(WidgetPalette.inkSoft)
+                    .lineLimit(3)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -364,6 +524,21 @@ private struct AccessoryInlineView: View {
             partnerName: "Sam",
             isPaired: true,
             startDate: Calendar.current.date(byAdding: .day, value: -60, to: .now)
+        )
+    )
+}
+
+#Preview("Small – Today", as: .systemSmall) {
+    PekisCountdownWidget()
+} timeline: {
+    CountdownEntry(
+        date: .now,
+        configuration: CountdownConfigIntent(),
+        snapshot: CountdownSnapshot(
+            reunionDate: .now,
+            partnerName: "Sam",
+            isPaired: true,
+            startDate: Calendar.current.date(byAdding: .day, value: -14, to: .now)
         )
     )
 }
