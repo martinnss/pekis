@@ -113,7 +113,11 @@ struct DashboardView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             Button {
-                copyInvite()
+                if viewModel.canCopyInvite {
+                    copyInvite()
+                } else {
+                    Task { await viewModel.fetchShareURL() }
+                }
             } label: {
                 HStack {
                     if viewModel.isLoadingShare {
@@ -122,18 +126,21 @@ struct DashboardView: View {
                     } else if didCopyInvite {
                         Image(systemName: "checkmark.circle.fill")
                         Text("Copied!")
-                    } else {
+                    } else if viewModel.canCopyInvite {
                         Image(systemName: "doc.on.doc.fill")
                         Text("Copy Invite Link")
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Get Invite Link")
                     }
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(SquishyButtonStyle(tint: .pekisCoral))
-            .disabled(viewModel.isLoadingShare || !viewModel.canCopyInvite)
-            .opacity(viewModel.canCopyInvite ? 1 : 0.6)
+            .disabled(viewModel.isLoadingShare)
             .animation(.easeInOut(duration: 0.2), value: didCopyInvite)
             .animation(.easeInOut(duration: 0.2), value: viewModel.isLoadingShare)
+            .animation(.easeInOut(duration: 0.2), value: viewModel.canCopyInvite)
         }
         .padding(20)
         .cozyCard(accent: .pekisCoral)
@@ -216,6 +223,7 @@ struct DashboardView: View {
                     VStack(spacing: 20) {
                         Text("When's your next visit?")
                             .font(PekisFont.title())
+                            .foregroundStyle(.pekisInk)
                             .multilineTextAlignment(.center)
                             .padding(.top)
 
@@ -227,6 +235,7 @@ struct DashboardView: View {
                         )
                         .datePickerStyle(.graphical)
                         .tint(.pekisCoral)
+                        .environment(\.colorScheme, .light)
                         .padding(.horizontal)
                     }
                     .padding(.bottom, 16)
@@ -246,10 +255,11 @@ struct DashboardView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") { viewModel.isEditingReunionDate = false }
-                        .tint(.pekisInkSoft)
+                        .foregroundStyle(.pekisInk)
                 }
             }
         }
+        .environment(\.colorScheme, .light)
         .presentationDetents([.large])
         .alert(
             "Couldn't Save",
