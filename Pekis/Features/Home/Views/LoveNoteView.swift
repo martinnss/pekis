@@ -156,9 +156,11 @@ private struct NoteCard: View {
     }
 }
 
+#if DEBUG
 #Preview {
     ZStack {
         CozyBackground()
         LoveNoteView(cloudKitService: MockCloudKitService(), onExit: {}).padding()
     }
 }
+#endif

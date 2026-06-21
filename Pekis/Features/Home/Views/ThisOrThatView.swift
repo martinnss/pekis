@@ -152,9 +152,11 @@ struct ThisOrThatView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     ZStack {
         CozyBackground()
         ThisOrThatView(cloudKitService: MockCloudKitService(), onExit: {}).padding()
     }
 }
+#endif
