@@ -124,12 +124,12 @@ At launch, the app creates a single shared `CloudKitService`, injects it into th
 
 ```mermaid
 flowchart TD
-    Launch[App Launch] --> Setup[CloudKitService.setup()]
+    Launch[App Launch] --> Setup["CloudKitService.setup()"]
     Setup --> Check{Paired couple exists?}
     Check -->|No| Onboarding[CoupleOnboardingView]
     Check -->|Yes| Home[HomeView]
     Share[Incoming share URL] --> Metadata[Fetch CKShare metadata]
-    Metadata --> Accept[acceptShare()]
+    Metadata --> Accept["acceptShare()"]
     Accept --> Check
 ```
 
