@@ -37,7 +37,16 @@ Long-distance relationships are hard. Texting isn't always enough. Pekis aims to
 
 ## 📸 Screenshots
 
-Screenshots coming soon. Clone the repo and run on a simulator to see the UI in action (`Cmd + R` in Xcode).
+| Dashboard | Daily Moment | Countdown Widget |
+| :---: | :---: | :---: |
+| ![Home dashboard while waiting for a partner to join](docs/screenshots/dashboard-waiting-partner.jpg) | ![Daily Moment photo sharing between partners](docs/screenshots/daily-moment-share.jpg) | ![Until We Reunite iOS home screen widgets](docs/screenshots/countdown-widget.jpg) |
+| Invite flow, next-visit planning, and the Peki duo mascot | Daily prompts, side-by-side photo sharing, and partner sync status | Small and medium widgets counting down to your next reunion |
+
+**Dashboard — Waiting for Partner.** The home screen after you create a couple space but before your partner joins. The Peki mascots reflect pairing status, a speech bubble nudges you to share the invite link, and the next-visit card lets you set your reunion date early.
+
+**Daily Moment.** A lightweight daily photo ritual with rotating prompts (e.g. *"Show me your outfit of the day!"*). Each partner posts independently; the screen shows your upload alongside a placeholder until your partner shares theirs.
+
+**Countdown Widget.** Native iOS widgets (small and medium) that surface your reunion countdown on the home screen — *"Until We Reunite"* with days remaining and the target date.
 
 ---
 

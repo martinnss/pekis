@@ -178,7 +178,7 @@ sentry.properties
 # Documentation (Generated)
 # ---------------------------------
 
-docs/generated/
+
 Documentation/Reference/
 
 # ---------------------------------
@@ -205,8 +205,6 @@ ADMISSIONS_NARRATIVE.md
 /.claude
 ## Deprecated/unused services (none currently)
 
-## Screenshots folder (if auto-generated)
-Screenshots/
 
 # ---------------------------------
 # Optional: Tuist / XcodeGen
