@@ -9,7 +9,7 @@
 
 > **Technical Overview:** Pekis uses feature-based MVVM, structured concurrency (`async/await`), CloudKit sharing for persistent couple data, and lightweight deterministic coordination for shared gameplay.
 
-Repository docs: [ARCHITECTURE.md](ARCHITECTURE.md), [DEVELOPMENT.md](DEVELOPMENT.md), [CONTRIBUTING.md](CONTRIBUTING.md), [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md).
+Repository docs: [ARCHITECTURE.md](ARCHITECTURE.md), [DEVELOPMENT.md](DEVELOPMENT.md), [CONTRIBUTING.md](CONTRIBUTING.md), [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md), [GitHub About setup](docs/GITHUB_ABOUT.md).
 
 ---
 
