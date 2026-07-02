@@ -13,6 +13,15 @@ import UIKit
 // MARK: - App Delegate (remote notification processing for CloudKit)
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    // Static reference because UIApplication.shared.delegate returns a SwiftUI
+    // wrapper when using @UIApplicationDelegateAdaptor — direct cast fails.
+    static weak var shared: AppDelegate?
+
+    override init() {
+        super.init()
+        AppDelegate.shared = self
+    }
+
     var cloudKitService: CloudKitService? {
         didSet {
             // A share tapped on a cold launch can arrive before RootView wires up
@@ -25,6 +34,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     private var pendingShareMetadata: CKShare.Metadata?
+    private var activeShareRecordName: String?
 
     func application(
         _ application: UIApplication,
@@ -45,7 +55,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         userDidAcceptCloudKitShareWith metadata: CKShare.Metadata
     ) {
+        PekisLogger.app.debug("AppDelegate: userDidAcceptCloudKitShareWith fired, shareURL=\(metadata.share.url?.absoluteString ?? "nil", privacy: .public)")
+        handleCloudKitShare(metadata)
+    }
+
+    // Called by SceneDelegate for apps using UIWindowScene (SwiftUI WindowGroup).
+    func handleCloudKitShare(_ metadata: CKShare.Metadata) {
+        let recordName = metadata.share.recordID.recordName
+        if activeShareRecordName == recordName {
+            PekisLogger.app.debug("handleCloudKitShare: already processing share \(recordName, privacy: .public), skipping duplicate")
+            return
+        }
+
+        PekisLogger.app.debug("handleCloudKitShare: cloudKitService ready=\(self.cloudKitService != nil, privacy: .public)")
         guard cloudKitService != nil else {
+            PekisLogger.app.debug("handleCloudKitShare: service not ready, buffering metadata")
             pendingShareMetadata = metadata
             return
         }
@@ -53,14 +77,37 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     private func accept(_ metadata: CKShare.Metadata) {
+        activeShareRecordName = metadata.share.recordID.recordName
+        PekisLogger.app.debug("accept: dispatching acceptShare on CloudKitService")
         Task { @MainActor in
             cloudKitService?.pendingShareMetadata = metadata
             do {
                 try await cloudKitService?.acceptShare(metadata)
+                PekisLogger.app.debug("accept: acceptShare completed successfully")
             } catch {
-                PekisLogger.app.error("Failed to accept share: \(error.localizedDescription, privacy: .public)")
+                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                PekisLogger.app.error("accept: Failed to accept share: \(message, privacy: .public)")
+                cloudKitService?.errorMessage = message
             }
+            activeShareRecordName = nil
         }
+    }
+
+    // Registers SceneDelegate as the UIWindowSceneDelegate so that
+    // windowScene(_:userDidAcceptCloudKitShareWith:) is called on scene-based apps.
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        if let metadata = options.cloudKitShareMetadata {
+            PekisLogger.app.debug("AppDelegate: configurationForConnecting cloudKitShareMetadata, shareURL=\(metadata.share.url?.absoluteString ?? "nil", privacy: .public)")
+            handleCloudKitShare(metadata)
+        }
+
+        let config = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        config.delegateClass = PekisSceneDelegate.self
+        return config
     }
 }
 
@@ -101,6 +148,8 @@ struct PekisApp: App {
 
 struct RootView: View {
     @EnvironmentObject var cloudKitService: CloudKitService
+    @State private var showShareError = false
+    @State private var shareErrorMessage = ""
 
     var body: some View {
         Group {
@@ -113,6 +162,17 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut, value: cloudKitService.isPaired)
+        .onChange(of: cloudKitService.errorMessage) { _, message in
+            guard let message, !message.isEmpty else { return }
+            shareErrorMessage = message
+            showShareError = true
+            cloudKitService.errorMessage = nil
+        }
+        .alert("Couldn't Join", isPresented: $showShareError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(shareErrorMessage)
+        }
     }
 }
 

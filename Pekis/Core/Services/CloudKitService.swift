@@ -112,7 +112,13 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             if let cachedCouple = Couple.loadFromCache() {
                 self.couple = cachedCouple
             }
-            handleError(error)
+            if !CloudKitError.isQueryabilityError(error) {
+                handleError(error)
+            } else {
+                PekisLogger.cloudKit.warning(
+                    "checkExistingCouple: queryability error, using cache: \(error.localizedDescription, privacy: .public)"
+                )
+            }
         }
     }
 
@@ -125,6 +131,8 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
         isLoading = true
         defer { isLoading = false }
+
+        try await createZoneIfNeeded()
 
         let newCouple = Couple(
             partnerAIdentifier: userID,
@@ -146,48 +154,74 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
                 throw CloudKitError.saveFailed(NSError(domain: "", code: -1))
             }
         } catch {
+            if CloudKitError.isZoneMissingError(error) {
+                try await createZoneIfNeeded()
+                let savedRecord = try await privateDatabase.save(record)
+                self.coupleRecord = savedRecord
+                if let couple = Couple(record: savedRecord) {
+                    self.couple = couple
+                    couple.saveToCache()
+                    return couple
+                }
+            }
             throw CloudKitError.saveFailed(error)
         }
     }
 
     func acceptShare(_ metadata: CKShare.Metadata) async throws {
+        PekisLogger.cloudKit.debug("acceptShare: start, currentUserID=\(self.currentUserID ?? "nil", privacy: .public)")
         isLoading = true
         defer { isLoading = false }
 
         // Wait for currentUserID if app launched cold from a share URL (races with setup())
         if currentUserID == nil {
+            PekisLogger.cloudKit.debug("acceptShare: currentUserID nil, waiting up to 5s for setup()")
             for _ in 0..<5 {
                 try await Task.sleep(nanoseconds: 1_000_000_000)
                 if currentUserID != nil { break }
             }
-            guard currentUserID != nil else { throw CloudKitError.notAuthenticated }
+            guard currentUserID != nil else {
+                PekisLogger.cloudKit.error("acceptShare: timed out waiting for currentUserID — user may not be signed into iCloud")
+                throw CloudKitError.notAuthenticated
+            }
         }
 
+        PekisLogger.cloudKit.debug("acceptShare: calling container.accept()")
         do {
             _ = try await container.accept(metadata)
+            PekisLogger.cloudKit.debug("acceptShare: container.accept() succeeded")
         } catch {
+            PekisLogger.cloudKit.error("acceptShare: container.accept() failed: \(error.localizedDescription, privacy: .public)")
             throw CloudKitError.shareFailed(error)
         }
 
         // Retry fetching the shared couple — CloudKit has a propagation delay after accept()
+        PekisLogger.cloudKit.debug("acceptShare: fetching shared couple (up to 3 attempts)")
         var sharedCouple: Couple?
         for attempt in 1...3 {
             if let found = try? await fetchSharedCouple() {
+                PekisLogger.cloudKit.debug("acceptShare: found shared couple on attempt \(attempt, privacy: .public)")
                 sharedCouple = found
                 break
             }
+            PekisLogger.cloudKit.debug("acceptShare: attempt \(attempt, privacy: .public) found nothing, \(attempt < 3 ? "retrying in 2s" : "giving up", privacy: .public)")
             if attempt < 3 {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
 
-        guard var couple = sharedCouple else { return }
+        guard var couple = sharedCouple else {
+            PekisLogger.cloudKit.error("acceptShare: could not fetch shared couple after 3 attempts")
+            throw CloudKitError.shareNotFound
+        }
 
         if let userID = currentUserID, couple.partnerBIdentifier == nil {
+            PekisLogger.cloudKit.debug("acceptShare: setting partnerBIdentifier and saving couple")
             couple.partnerBIdentifier = userID
             do {
                 try await saveUpdatedCouple(couple)
             } catch {
+                PekisLogger.cloudKit.error("acceptShare: saveUpdatedCouple failed: \(error.localizedDescription, privacy: .public)")
                 errorMessage = "Joined successfully, but couldn't save your profile. Please try again."
                 needsPartnerName = true
                 return
@@ -197,6 +231,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             couple.saveToCache()
         }
         needsPartnerName = couple.partnerBName == nil || couple.partnerBName?.isEmpty == true
+        PekisLogger.cloudKit.debug("acceptShare: done, needsPartnerName=\(self.needsPartnerName, privacy: .public)")
     }
 
     func updateReunionDate(_ date: Date) async throws {
@@ -432,9 +467,12 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             throw CloudKitError.fetchFailed(error)
         }
     }
+}
 
-    // MARK: - Sharing
+// MARK: - Sharing & Subscriptions
 
+@MainActor
+extension CloudKitService {
     func getOrCreateShare() async throws -> CKShare {
         // Ensure we have a live CKRecord — the couple may have been loaded from
         // cache with no in-memory CKRecord (e.g. after an app restart).
@@ -548,8 +586,6 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
         }
     }
 
-    // MARK: - Subscriptions
-
     func subscribeToChanges() async throws {
         // BUG 3 FIX: subscribe to BOTH databases.
         // Partner A receives changes in their private database (from Partner B's writes to the shared zone).
@@ -659,15 +695,18 @@ extension CloudKitService {
 @MainActor
 private extension CloudKitService {
     func createZoneIfNeeded() async throws {
-        let zone = CKRecordZone(zoneID: coupleZoneID)
+        try await CloudKitZoneSetup.createZoneIfNeeded(in: privateDatabase, zoneID: coupleZoneID)
+    }
 
-        do {
-            _ = try await privateDatabase.save(zone)
-        } catch let error as CKError where error.code == .serverRecordChanged {
-            // Zone already exists, that's fine
-        } catch let error as CKError where error.code == .zoneNotFound {
-            _ = try await privateDatabase.save(zone)
-        }
+    var coupleDiscoveryConfiguration: CloudKitCoupleDiscovery.Configuration {
+        CloudKitCoupleDiscovery.Configuration(
+            privateDatabase: privateDatabase,
+            sharedDatabase: sharedDatabase,
+            coupleZoneID: coupleZoneID,
+            currentUserID: currentUserID,
+            cachedCoupleID: Couple.loadFromCache()?.id,
+            inMemoryCoupleID: couple?.id
+        )
     }
 
     func saveUpdatedCouple(_ updatedCouple: Couple) async throws {
@@ -685,6 +724,7 @@ private extension CloudKitService {
             record = existing
             updatedCouple.updateRecord(record)
         } else {
+            try await createZoneIfNeeded()
             record = updatedCouple.toRecord(in: coupleZoneID)
         }
 
@@ -706,42 +746,34 @@ private extension CloudKitService {
     }
 
     func fetchOwnedCouple() async throws -> Couple? {
-        let predicate = NSPredicate(value: true)
-        let query = CKQuery(recordType: Couple.recordType, predicate: predicate)
-
-        let results = try await privateDatabase.records(matching: query, inZoneWith: coupleZoneID)
-
-        for (_, result) in results.matchResults {
-            if case .success(let record) = result {
-                self.coupleRecord = record
-                return Couple(record: record)
-            }
+        guard let result = try await CloudKitCoupleDiscovery.fetchOwnedCouple(using: coupleDiscoveryConfiguration) else {
+            return nil
         }
-
-        return nil
+        self.coupleRecord = result.record
+        return result.couple
     }
 
     func fetchSharedCouple() async throws -> Couple? {
-        let zones = try await sharedDatabase.allRecordZones()
-
-        for zone in zones {
-            let predicate = NSPredicate(value: true)
-            let query = CKQuery(recordType: Couple.recordType, predicate: predicate)
-
-            let results = try await sharedDatabase.records(matching: query, inZoneWith: zone.zoneID)
-
-            for (_, result) in results.matchResults {
-                if case .success(let record) = result {
-                    self.coupleRecord = record
-                    return Couple(record: record)
-                }
-            }
+        guard let result = try await CloudKitCoupleDiscovery.fetchSharedCouple(using: coupleDiscoveryConfiguration) else {
+            return nil
         }
-
-        return nil
+        self.coupleRecord = result.record
+        return result.couple
     }
 
     func handleError(_ error: Error) {
+        if CloudKitError.isQueryabilityError(error) {
+            PekisLogger.cloudKit.warning(
+                "handleError: suppressing queryability alert: \(error.localizedDescription, privacy: .public)"
+            )
+            return
+        }
+
+        if let cloudKitError = error as? CloudKitError {
+            errorMessage = cloudKitError.errorDescription
+            return
+        }
+
         if let ckError = error as? CKError {
             switch ckError.code {
             case .notAuthenticated:
@@ -750,11 +782,13 @@ private extension CloudKitService {
                 errorMessage = "Network unavailable. Data will sync when connection is restored."
             case .quotaExceeded:
                 errorMessage = "iCloud storage is full. Please free up space."
+            case .zoneNotFound:
+                errorMessage = CloudKitError.zoneCreationFailed(ckError).errorDescription
             default:
-                errorMessage = ckError.localizedDescription
+                errorMessage = CloudKitError.unknown(ckError).errorDescription
             }
         } else {
-            errorMessage = error.localizedDescription
+            errorMessage = CloudKitError.unknown(error).errorDescription
         }
     }
 }

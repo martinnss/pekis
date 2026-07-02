@@ -147,15 +147,66 @@ enum CloudKitError: LocalizedError {
         case .recordNotFound:
             return "Record not found in CloudKit."
         case .saveFailed(let error):
-            return "Failed to save: \(error.localizedDescription)"
+            return "Failed to save: \(Self.actionableMessage(for: error))"
         case .fetchFailed(let error):
-            return "Failed to fetch data: \(error.localizedDescription)"
+            return "Failed to fetch data: \(Self.actionableMessage(for: error))"
         case .shareFailed(let error):
-            return "Failed to share: \(error.localizedDescription)"
+            let description = Self.actionableMessage(for: error)
+            if description.localizedCaseInsensitiveContains("share not found") {
+                return "This invite link is no longer valid. Ask your partner to open Pekis, tap \"Get Link\", and send you a fresh one."
+            }
+            return "Failed to share: \(description)"
         case .zoneCreationFailed(let error):
-            return "Failed to create private zone: \(error.localizedDescription)"
+            return "Couldn't prepare couple storage. \(Self.actionableMessage(for: error))"
         case .unknown(let error):
-            return "An unexpected error occurred: \(error.localizedDescription)"
+            return "An unexpected error occurred: \(Self.actionableMessage(for: error))"
         }
     }
+
+    /// Maps low-level CloudKit failures to onboarding-friendly guidance.
+    private static func actionableMessage(for error: Error) -> String {
+        if let ckError = error as? CKError {
+            switch ckError.code {
+            case .zoneNotFound:
+                return zoneMissingGuidance
+            case .invalidArguments where isQueryabilityError(error):
+                return queryabilityGuidance
+            default:
+                break
+            }
+        }
+
+        if isZoneMissingError(error) {
+            return zoneMissingGuidance
+        }
+        if isQueryabilityError(error) {
+            return queryabilityGuidance
+        }
+
+        return error.localizedDescription
+    }
+
+    static func isQueryabilityError(_ error: Error) -> Bool {
+        if let ckError = error as? CKError, ckError.code == .invalidArguments {
+            return true
+        }
+
+        let lowercased = error.localizedDescription.lowercased()
+        return lowercased.contains("queryable") || lowercased.contains("not marked queryable")
+    }
+
+    static func isZoneMissingError(_ error: Error) -> Bool {
+        if let ckError = error as? CKError, ckError.code == .zoneNotFound {
+            return true
+        }
+
+        let lowercased = error.localizedDescription.lowercased()
+        return lowercased.contains("zone does not exist") || lowercased.contains("zone not found")
+    }
+
+    private static let zoneMissingGuidance =
+        "Cloud storage isn't ready yet. Please try creating or joining your couple again."
+
+    private static let queryabilityGuidance =
+        "CloudKit isn't configured correctly for this build. Quit the app, reinstall from Xcode, and try again."
 }
