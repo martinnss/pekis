@@ -54,9 +54,16 @@ enum PekisSharedConfig {
 enum PekisSharedStore {
     private static let snapshotKey = "pekis.countdown.snapshot"
 
-    private static var defaults: UserDefaults? {
-        UserDefaults(suiteName: PekisSharedConfig.appGroupID)
-    }
+    /// Lazily opened once. `UserDefaults(suiteName:)` logs a noisy CFPrefs
+    /// warning when the App Group container isn't available (simulator without
+    /// provisioning, missing portal registration, etc.), so verify access first.
+    private static let defaults: UserDefaults? = {
+        let groupID = PekisSharedConfig.appGroupID
+        guard FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID) != nil else {
+            return nil
+        }
+        return UserDefaults(suiteName: groupID)
+    }()
 
     static func save(_ snapshot: CountdownSnapshot) {
         guard let defaults, let data = try? JSONEncoder().encode(snapshot) else { return }
