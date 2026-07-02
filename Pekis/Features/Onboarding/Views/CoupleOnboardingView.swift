@@ -33,6 +33,9 @@ struct CoupleOnboardingView: View {
         .onChange(of: cloudKitService.needsPartnerName) {
             viewModel.setCloudKitService(cloudKitService)
         }
+        .onChange(of: cloudKitService.isPaired) {
+            viewModel.setCloudKitService(cloudKitService)
+        }
         .alert("Error", isPresented: $viewModel.showError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -210,7 +213,7 @@ private struct CreateOrJoinStepView: View {
         .alert("Join Your Partner", isPresented: $viewModel.showJoinInstructions) {
             Button("Got it", role: .cancel) {}
         } message: {
-            Text("Ask your partner to share their invite link with you. Tap the link to connect.")
+            Text("Ask your partner to share their invite link with you in iMessage. Tap the link directly in the message — don't open it in Safari.")
         }
     }
 
