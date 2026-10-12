@@ -18,7 +18,9 @@ protocol MatchmakingServiceProtocol {
     func reportResult(score: Int)
 }
 
-// MARK: - Simulation Service (For MVP Testing)
+// MARK: - Simulation Service
+
+/// Local stand-in used for solo play and whenever no paired CloudKit couple is available.
 class SimulationMatchmakingService: MatchmakingServiceProtocol {
     var status = CurrentValueSubject<MatchStatus, Never>(.idle)
     var opponentWon = PassthroughSubject<Void, Never>()

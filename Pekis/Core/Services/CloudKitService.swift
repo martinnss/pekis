@@ -26,7 +26,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
     @Published private(set) var couple: Couple? {
         didSet { WidgetBridge.update(couple: couple, currentUserID: currentUserID) }
     }
-    @Published private(set) var isLoading = false
+    @Published var isLoading = false
     /// True once the initial cold-launch couple check has finished. Drives the
     /// one-time full-screen LoadingView so later `isLoading` toggles (e.g. while
     /// creating a couple) don't tear the onboarding flow down and reset it.
@@ -40,22 +40,23 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
         return couple.partnerBIdentifier != nil
     }
 
-    // MARK: - Private Properties
+    // MARK: - Internal State
+    // Internal (not private) so the feature extensions in `CloudKitService+*.swift` can share it.
 
     // Lazy to defer CKContainer creation until first use — prevents crash in test
     // environments where entitlements are absent (CODE_SIGNING_ALLOWED=NO).
-    private lazy var container: CKContainer = CKContainer(identifier: containerIdentifier)
-    private lazy var privateDatabase: CKDatabase = container.privateCloudDatabase
-    private var sharedDatabase: CKDatabase { container.sharedCloudDatabase }
+    lazy var container: CKContainer = CKContainer(identifier: containerIdentifier)
+    lazy var privateDatabase: CKDatabase = container.privateCloudDatabase
+    var sharedDatabase: CKDatabase { container.sharedCloudDatabase }
 
-    private let containerIdentifier: String
-    private let coupleZoneName = "CoupleZone"
-    private var coupleZoneID: CKRecordZone.ID {
+    let containerIdentifier: String
+    let coupleZoneName = "CoupleZone"
+    var coupleZoneID: CKRecordZone.ID {
         CKRecordZone.ID(zoneName: coupleZoneName, ownerName: CKCurrentUserDefaultName)
     }
 
-    private var coupleRecord: CKRecord?
-    private var shareRecord: CKShare?
+    var coupleRecord: CKRecord?
+    var shareRecord: CKShare?
 
     // MARK: - Initialization
 
@@ -173,18 +174,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
         isLoading = true
         defer { isLoading = false }
 
-        // Wait for currentUserID if app launched cold from a share URL (races with setup())
-        if currentUserID == nil {
-            PekisLogger.cloudKit.debug("acceptShare: currentUserID nil, waiting up to 5s for setup()")
-            for _ in 0..<5 {
-                try await Task.sleep(nanoseconds: 1_000_000_000)
-                if currentUserID != nil { break }
-            }
-            guard currentUserID != nil else {
-                PekisLogger.cloudKit.error("acceptShare: timed out waiting for currentUserID — user may not be signed into iCloud")
-                throw CloudKitError.notAuthenticated
-            }
-        }
+        try await waitForCurrentUserID()
 
         PekisLogger.cloudKit.debug("acceptShare: calling container.accept()")
         do {
@@ -195,22 +185,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             throw CloudKitError.shareFailed(error)
         }
 
-        // Retry fetching the shared couple — CloudKit has a propagation delay after accept()
-        PekisLogger.cloudKit.debug("acceptShare: fetching shared couple (up to 3 attempts)")
-        var sharedCouple: Couple?
-        for attempt in 1...3 {
-            if let found = try? await fetchSharedCouple() {
-                PekisLogger.cloudKit.debug("acceptShare: found shared couple on attempt \(attempt, privacy: .public)")
-                sharedCouple = found
-                break
-            }
-            PekisLogger.cloudKit.debug("acceptShare: attempt \(attempt, privacy: .public) found nothing, \(attempt < 3 ? "retrying in 2s" : "giving up", privacy: .public)")
-            if attempt < 3 {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-            }
-        }
-
-        guard var couple = sharedCouple else {
+        guard var couple = await fetchSharedCoupleAfterAccept() else {
             PekisLogger.cloudKit.error("acceptShare: could not fetch shared couple after 3 attempts")
             throw CloudKitError.shareNotFound
         }
@@ -232,6 +207,35 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
         }
         needsPartnerName = couple.partnerBName == nil || couple.partnerBName?.isEmpty == true
         PekisLogger.cloudKit.debug("acceptShare: done, needsPartnerName=\(self.needsPartnerName, privacy: .public)")
+    }
+
+    /// Waits for `currentUserID` if the app launched cold from a share URL (this races with `setup()`).
+    private func waitForCurrentUserID() async throws {
+        guard currentUserID == nil else { return }
+        PekisLogger.cloudKit.debug("acceptShare: currentUserID nil, waiting up to 5s for setup()")
+        for _ in 0..<5 {
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+            if currentUserID != nil { return }
+        }
+        PekisLogger.cloudKit.error("acceptShare: timed out waiting for currentUserID — user may not be signed into iCloud")
+        throw CloudKitError.notAuthenticated
+    }
+
+    /// Fetches the shared couple, retrying because CloudKit has a propagation delay after `accept()`.
+    private func fetchSharedCoupleAfterAccept() async -> Couple? {
+        let maxAttempts = 3
+        PekisLogger.cloudKit.debug("acceptShare: fetching shared couple (up to \(maxAttempts, privacy: .public) attempts)")
+        for attempt in 1...maxAttempts {
+            if let found = try? await fetchSharedCouple() {
+                PekisLogger.cloudKit.debug("acceptShare: found shared couple on attempt \(attempt, privacy: .public)")
+                return found
+            }
+            PekisLogger.cloudKit.debug("acceptShare: attempt \(attempt, privacy: .public) found nothing")
+            if attempt < maxAttempts {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
+        return nil
     }
 
     func updateReunionDate(_ date: Date) async throws {
@@ -263,437 +267,12 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
         try await saveUpdatedCouple(currentCouple)
     }
-
-    // MARK: - Love Notes
-
-    func sendLoveNote(content: String) async throws {
-        guard let couple = couple, let userID = currentUserID else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        isLoading = true
-        defer { isLoading = false }
-
-        let note = LoveNote(
-            coupleID: couple.id,
-            authorID: userID,
-            content: content
-        )
-
-        // Use the fetched couple record's actual zone (it carries the correct ownerName
-        // for Partner B, who lives in the sharedDatabase). Both partners write to the same
-        // zone — Partner A via privateDatabase, Partner B via sharedDatabase.
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let record = note.toRecord(in: zoneID)
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-
-        do {
-            _ = try await database.save(record)
-        } catch {
-            throw CloudKitError.saveFailed(error)
-        }
-    }
-
-    func fetchLoveNotes() async throws -> [LoveNote] {
-        guard let couple = couple else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        let predicate = NSPredicate(format: "coupleID == %@", couple.id)
-        let query = CKQuery(recordType: LoveNote.recordType, predicate: predicate)
-        query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
-
-        // Must specify inZoneWith — records(matching:) without a zone only
-        // searches the DEFAULT zone, not our custom CoupleZone. Also route to the
-        // correct database (private for Partner A, shared for Partner B). All records
-        // for both partners live in Partner A's zone, so one database fetch is enough.
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-
-        do {
-            var notes: [LoveNote] = []
-
-            let results = try await database.records(matching: query, inZoneWith: zoneID)
-            for (_, result) in results.matchResults {
-                if case .success(let record) = result,
-                   let note = LoveNote(record: record) {
-                    notes.append(note)
-                }
-            }
-
-            notes.sort { $0.createdAt > $1.createdAt }
-            LoveNote.saveToCache(notes)
-            return notes
-        } catch {
-            let cached = LoveNote.loadFromCache()
-            if !cached.isEmpty {
-                return cached
-            }
-            throw CloudKitError.fetchFailed(error)
-        }
-    }
-
-    // MARK: - This or That
-
-    func saveThisOrThatAnswer(questionIndex: Int, selectedOption: Int) async throws {
-        guard let couple = couple, let userID = currentUserID else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        isLoading = true
-        defer { isLoading = false }
-
-        let answer = ThisOrThatAnswer(
-            coupleID: couple.id,
-            authorID: userID,
-            questionIndex: questionIndex,
-            selectedOption: selectedOption
-        )
-
-        // Same zone routing as sendLoveNote.
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let record = answer.toRecord(in: zoneID)
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-
-        do {
-            _ = try await database.save(record)
-        } catch {
-            throw CloudKitError.saveFailed(error)
-        }
-    }
-
-    func fetchThisOrThatAnswers() async throws -> [ThisOrThatAnswer] {
-        guard let couple = couple else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        let predicate = NSPredicate(format: "coupleID == %@", couple.id)
-        let query = CKQuery(recordType: ThisOrThatAnswer.recordType, predicate: predicate)
-
-        // Same zone + database routing as fetchLoveNotes.
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-
-        do {
-            var answers: [ThisOrThatAnswer] = []
-
-            let results = try await database.records(matching: query, inZoneWith: zoneID)
-            for (_, result) in results.matchResults {
-                if case .success(let record) = result,
-                   let answer = ThisOrThatAnswer(record: record) {
-                    answers.append(answer)
-                }
-            }
-
-            ThisOrThatAnswer.saveToCache(answers)
-            return answers
-        } catch {
-            let cached = ThisOrThatAnswer.loadFromCache()
-            if !cached.isEmpty {
-                return cached
-            }
-            throw CloudKitError.fetchFailed(error)
-        }
-    }
-
-    // MARK: - Moments
-
-    func saveMoment(imageData: Data, prompt: String) async throws {
-        guard let couple = couple, let userID = currentUserID else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        isLoading = true
-        defer { isLoading = false }
-
-        let moment = MomentShareRecord(
-            coupleID: couple.id,
-            authorID: userID,
-            prompt: prompt
-        )
-
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let record = moment.toRecord(in: zoneID)
-
-        // Write JPEG data to a temp file — CKAsset requires a file URL
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(moment.id + ".jpg")
-        do {
-            try imageData.write(to: tempURL)
-        } catch {
-            throw CloudKitError.saveFailed(error)
-        }
-        defer { try? FileManager.default.removeItem(at: tempURL) }
-
-        record[MomentShareRecord.RecordKey.photo.rawValue] = CKAsset(fileURL: tempURL)
-
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-
-        do {
-            _ = try await database.save(record)
-        } catch {
-            throw CloudKitError.saveFailed(error)
-        }
-    }
-
-    func fetchTodaysMoments() async throws -> [MomentShareRecord] {
-        guard let couple = couple else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        let startOfDay = Calendar.current.startOfDay(for: Date())
-        let predicate = NSPredicate(
-            format: "coupleID == %@ AND createdAt >= %@",
-            couple.id,
-            startOfDay as NSDate
-        )
-        let query = CKQuery(recordType: MomentShareRecord.recordType, predicate: predicate)
-        query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
-
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-
-        do {
-            var moments: [MomentShareRecord] = []
-            let results = try await database.records(matching: query, inZoneWith: zoneID)
-            for (_, result) in results.matchResults {
-                if case .success(let record) = result,
-                   let moment = MomentShareRecord(record: record) {
-                    moments.append(moment)
-                }
-            }
-            return moments
-        } catch {
-            throw CloudKitError.fetchFailed(error)
-        }
-    }
-}
-
-// MARK: - Sharing & Subscriptions
-
-@MainActor
-extension CloudKitService {
-    func getOrCreateShare() async throws -> CKShare {
-        // Ensure we have a live CKRecord — the couple may have been loaded from
-        // cache with no in-memory CKRecord (e.g. after an app restart).
-        if coupleRecord == nil {
-            // 1. Try a zone query first (the normal path).
-            _ = try? await fetchOwnedCouple()
-        }
-        if coupleRecord == nil, let cachedID = couple?.id {
-            // 2. Fall back to a direct record fetch by the known UUID so a
-            //    transient zone-query failure doesn't permanently lock the button.
-            let recordID = CKRecord.ID(recordName: cachedID, zoneID: coupleZoneID)
-            if let record = try? await privateDatabase.record(for: recordID) {
-                self.coupleRecord = record
-            }
-        }
-        guard let existingCoupleRecord = coupleRecord else { throw CloudKitError.coupleNotFound }
-
-        // Check if share already exists and is valid
-        if let existingShare = shareRecord, existingShare.url != nil {
-            return existingShare
-        }
-
-        // Fetch a fresh copy of the couple record to avoid server-change conflicts
-        let freshCoupleRecord: CKRecord
-        do {
-            freshCoupleRecord = try await privateDatabase.record(for: existingCoupleRecord.recordID)
-            self.coupleRecord = freshCoupleRecord
-        } catch {
-            // If fetch fails, fall back to in-memory record
-            freshCoupleRecord = existingCoupleRecord
-        }
-
-        // Try to re-use an existing share if it exists on the record
-        if let shareReference = freshCoupleRecord.share {
-            do {
-                if let share = try await privateDatabase.record(for: shareReference.recordID) as? CKShare,
-                   share.url != nil {
-                    self.shareRecord = share
-                    return share
-                }
-            } catch {
-                // If fetching existing share fails, we'll recreate
-            }
-        }
-
-        // Create a new share for the up-to-date couple record
-        let share = CKShare(rootRecord: freshCoupleRecord)
-        share[CKShare.SystemFieldKey.title] = "Pekis Couple" as CKRecordValue
-        // Anyone with the invite link can join as a participant. Without this
-        // (.none), CloudKit only authorizes participants added by Apple ID, so a
-        // partner who taps the URL is rejected with "owner stopped sharing / no
-        // permission." Read-write lets the partner sync moments back.
-        share.publicPermission = .readWrite
-
-        do {
-            // Use changedKeys policy to avoid ETag conflicts when the record was just fetched
-            let result = try await privateDatabase.modifyRecords(
-                saving: [freshCoupleRecord, share],
-                deleting: [],
-                savePolicy: .changedKeys,
-                atomically: true
-            )
-
-            var savedShare: CKShare?
-
-            for (_, saveResult) in result.saveResults {
-                switch saveResult {
-                case .success(let record):
-                    if let share = record as? CKShare {
-                        savedShare = share
-                        self.shareRecord = share
-                    } else {
-                        self.coupleRecord = record
-                    }
-                case .failure(let error):
-                    throw CloudKitError.shareFailed(error)
-                }
-            }
-
-            guard let finalShare = savedShare else {
-                throw CloudKitError.shareFailed(
-                    NSError(
-                        domain: "CloudKitError",
-                        code: -2,
-                        userInfo: [NSLocalizedDescriptionKey: "Share creation failed - record not saved properly."]
-                    )
-                )
-            }
-
-            // Ensure the URL is present; if not, retry once after a short delay
-            if finalShare.url == nil {
-                try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-                if let refreshedShare = try await privateDatabase.record(for: finalShare.recordID) as? CKShare,
-                   refreshedShare.url != nil {
-                    self.shareRecord = refreshedShare
-                    return refreshedShare
-                }
-
-                throw CloudKitError.shareFailed(
-                    NSError(
-                        domain: "CloudKitError",
-                        code: -1,
-                        userInfo: [NSLocalizedDescriptionKey: "Share URL is not available. This may be a CloudKit configuration issue."]
-                    )
-                )
-            }
-
-            return finalShare
-        } catch {
-            throw CloudKitError.shareFailed(error)
-        }
-    }
-
-    func subscribeToChanges() async throws {
-        // Subscribe to BOTH databases.
-        // Partner A receives changes in their private database (from Partner B's writes to the shared zone).
-        // Partner B receives changes in the shared database (from Partner A's writes to their zone).
-        await subscribeDatabase(privateDatabase, subscriptionID: "pekis-private-changes")
-        await subscribeDatabase(sharedDatabase, subscriptionID: "pekis-shared-changes")
-    }
-
-    private func subscribeDatabase(_ database: CKDatabase, subscriptionID: String) async {
-        // Check if subscription already exists
-        if (try? await database.subscription(for: subscriptionID)) != nil { return }
-
-        let subscription = CKDatabaseSubscription(subscriptionID: subscriptionID)
-        let notificationInfo = CKSubscription.NotificationInfo()
-        notificationInfo.shouldSendContentAvailable = true // Silent push — no visible banner
-        subscription.notificationInfo = notificationInfo
-
-        _ = try? await database.save(subscription)
-    }
-
-    func handleNotification(userInfo: [AnyHashable: Any]) async {
-        guard let dict = userInfo as? [String: NSObject],
-              CKNotification(fromRemoteNotificationDictionary: dict) != nil else {
-            return
-        }
-        await checkExistingCouple()
-        NotificationCenter.default.post(name: .pekisCloudKitDataChanged, object: nil)
-    }
-}
-
-// MARK: - Notification Names
-
-extension Notification.Name {
-    static let pekisCloudKitDataChanged = Notification.Name("PekisCloudKitDataChanged")
-}
-
-// MARK: - Word Search Sessions
-
-@MainActor
-extension CloudKitService {
-    func fetchWordSearchSession() async throws -> WordSearchSession? {
-        guard let couple = couple else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-        let recordID = CKRecord.ID(recordName: WordSearchSession.recordName(for: couple.id), zoneID: zoneID)
-
-        do {
-            let record = try await database.record(for: recordID)
-            return WordSearchSession(record: record)
-        } catch let error as CKError where error.code == .unknownItem {
-            return nil
-        } catch {
-            throw CloudKitError.fetchFailed(error)
-        }
-    }
-
-    func saveWordSearchSession(_ session: WordSearchSession) async throws -> WordSearchSession {
-        guard couple != nil else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-        let record = session.toRecord(in: zoneID)
-
-        do {
-            let savedRecord = try await database.save(record)
-            guard let savedSession = WordSearchSession(record: savedRecord) else {
-                throw CloudKitError.saveFailed(
-                    NSError(
-                        domain: "CloudKitService",
-                        code: -3,
-                        userInfo: [NSLocalizedDescriptionKey: "Saved Word Search session could not be decoded."]
-                    )
-                )
-            }
-            return savedSession
-        } catch {
-            throw CloudKitError.saveFailed(error)
-        }
-    }
-
-    func deleteWordSearchSession() async throws {
-        guard let couple = couple else {
-            throw CloudKitError.coupleNotFound
-        }
-
-        let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
-        let recordID = CKRecord.ID(recordName: WordSearchSession.recordName(for: couple.id), zoneID: zoneID)
-
-        do {
-            _ = try await database.deleteRecord(withID: recordID)
-        } catch let error as CKError where error.code == .unknownItem {
-            return
-        } catch {
-            throw CloudKitError.saveFailed(error)
-        }
-    }
 }
 
 // MARK: - Private Helpers
 
 @MainActor
-private extension CloudKitService {
+extension CloudKitService {
     func createZoneIfNeeded() async throws {
         try await CloudKitZoneSetup.createZoneIfNeeded(in: privateDatabase, zoneID: coupleZoneID)
     }
@@ -833,64 +412,3 @@ extension CloudKitService {
         ThisOrThatAnswer.clearCache()
     }
 }
-
-// MARK: - Preview/Testing Support
-
-#if DEBUG
-@MainActor
-final class MockCloudKitService: ObservableObject, CloudKitServiceProtocol {
-    @Published var currentUserID: String? = "mock-user-123"
-    @Published var couple: Couple? = Couple(
-        partnerAIdentifier: "mock-user-123",
-        partnerBIdentifier: "partner-456",
-        partnerAName: "You",
-        partnerBName: "Partner",
-        reunionDate: Calendar.current.date(byAdding: .day, value: 30, to: Date())
-    )
-    @Published var isLoading = false
-    @Published var hasLoadedInitialState = true
-    @Published var errorMessage: String?
-    @Published var pendingShareMetadata: CKShare.Metadata?
-    @Published var needsPartnerName: Bool = false
-
-    private var wordSearchSession: WordSearchSession?
-
-    var isPaired: Bool { couple?.partnerBIdentifier != nil }
-
-    func setup() async {}
-    func checkExistingCouple() async {}
-    func createCouple(name: String) async throws -> Couple {
-        let newCouple = Couple(partnerAIdentifier: currentUserID ?? "", partnerAName: name)
-        couple = newCouple
-        return newCouple
-    }
-    func acceptShare(_ metadata: CKShare.Metadata) async throws {}
-    func updateReunionDate(_ date: Date) async throws {
-        couple?.reunionDate = date
-    }
-    func updateMyName(_ name: String) async throws {}
-    func disconnectCouple() async throws { couple = nil }
-    func sendLoveNote(content: String) async throws {}
-    func fetchLoveNotes() async throws -> [LoveNote] { [] }
-    func saveThisOrThatAnswer(questionIndex: Int, selectedOption: Int) async throws {}
-    func fetchThisOrThatAnswers() async throws -> [ThisOrThatAnswer] { [] }
-    func saveMoment(imageData: Data, prompt: String) async throws {}
-    func fetchTodaysMoments() async throws -> [MomentShareRecord] { [] }
-    func fetchWordSearchSession() async throws -> WordSearchSession? {
-        wordSearchSession
-    }
-    func saveWordSearchSession(_ session: WordSearchSession) async throws -> WordSearchSession {
-        wordSearchSession = session
-        return session
-    }
-    func deleteWordSearchSession() async throws {
-        wordSearchSession = nil
-    }
-    func getOrCreateShare() async throws -> CKShare {
-        // Return a stub CKShare to avoid fatalError crashing previews
-        throw CloudKitError.shareNotFound
-    }
-    func subscribeToChanges() async throws {}
-    func handleNotification(userInfo: [AnyHashable: Any]) async {}
-}
-#endif

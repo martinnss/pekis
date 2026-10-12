@@ -12,6 +12,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Consolidated the AI-assistant guidelines into `.github/copilot-instructions.md`
 - App icon asset catalog reduced to a single compressed icon; removed an unused dashboard image
 
+- Split `CloudKitService` into focused extension files (content, sharing, word search) plus a standalone `MockCloudKitService`, and broke up the long share-acceptance and share-creation functions
+- SwiftLint now reports zero warnings
+
 ### Fixed
 
 - The shared `Pekis` scheme is now configured for the test action, so `Cmd + U` and `xcodebuild test` run the unit tests

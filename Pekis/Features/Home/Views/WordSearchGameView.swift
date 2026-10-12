@@ -31,11 +31,11 @@ struct WordSearchGameView: View {
 
     private var header: some View {
         HStack {
-            Button(action: {
+            Button {
                 HapticManager.selection()
                 viewModel.stopGame()
                 onExit()
-            }) {
+            } label: {
                 Image(systemName: "house.fill")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.pekisMint)

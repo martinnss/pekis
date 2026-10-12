@@ -63,17 +63,17 @@ final class WordSearchTests: XCTestCase {
 
         for r in 0..<rows {
             for c in 0..<cols {
-                for (dx, dy) in dirs {
-                    if checkWord(word, grid: grid, r: r, c: c, dx: dx, dy: dy) {
-                        return true
-                    }
+                for direction in dirs where checkWord(word, grid: grid, start: (r, c), direction: direction) {
+                    return true
                 }
             }
         }
         return false
     }
 
-    private func checkWord(_ word: String, grid: [[String]], r: Int, c: Int, dx: Int, dy: Int) -> Bool {
+    private func checkWord(_ word: String, grid: [[String]], start: (row: Int, column: Int), direction: (dx: Int, dy: Int)) -> Bool {
+        let (r, c) = start
+        let (dx, dy) = direction
         let len = word.count
         let rows = grid.count
         let cols = grid[0].count

@@ -107,20 +107,20 @@ struct WordSearchContainerView: View {
 
             Spacer()
 
-            Button(action: {
+            Button {
                 countdownTask?.cancel()
                 matchmaking.startSinglePlayer()
                 viewModel.startGame()
-            }) {
+            } label: {
                 Label("Play alone", systemImage: "person.fill")
             }
             .buttonStyle(SquishyButtonStyle(tint: .pekisMint))
 
-            Button(action: {
+            Button {
                 countdownTask?.cancel()
                 matchmaking.leave()
                 onExit()
-            }) {
+            } label: {
                 Text("Cancel")
             }
             .buttonStyle(CapsuleButtonStyle(background: .pekisSurfaceSoft, foreground: .pekisInk))

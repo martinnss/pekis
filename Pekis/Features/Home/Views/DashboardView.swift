@@ -273,9 +273,11 @@ struct DashboardView: View {
             Text(viewModel.saveErrorMessage ?? "")
         }
     }
+}
 
-    // MARK: - Activity grid
+// MARK: - Activity grid
 
+private extension DashboardView {
     private var activityGrid: some View {
         VStack(spacing: 14) {
             activityCard(title: "Couples Word Search", icon: "puzzlepiece.fill", activity: .wordSearch, action: onWordSearch)
@@ -295,10 +297,10 @@ struct DashboardView: View {
         action: @escaping () -> Void
     ) -> some View {
         let accent = activity.accent
-        return Button(action: {
+        return Button {
             HapticManager.selection()
             action()
-        }) {
+        } label: {
             HStack(spacing: 14) {
                 ZStack {
                     Circle().fill(accent)

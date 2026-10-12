@@ -173,7 +173,7 @@ Pekis/                # iOS app target
 │   ├── Data/         # Curated prompts, quotes, and content pools
 │   ├── DesignSystem/ # Theme, fonts, and card styles
 │   ├── Models/       # Shared domain models and CloudKit mappings
-│   ├── Services/     # CloudKit, sharing, matchmaking, puzzle generation
+│   ├── Services/     # CloudKit (split into CloudKitService+*.swift extensions), sharing, matchmaking, puzzles
 │   ├── Shared/       # Code compiled into both the app and the widget
 │   └── Utilities/    # Haptics, logging, notifications, configuration
 ├── Features/
