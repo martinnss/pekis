@@ -6,19 +6,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-12
+
+### Added
+
+- Retry with exponential backoff for transient CloudKit failures (network loss, throttling, busy zone), honoring the server's retry hint
+- Handling for iCloud sign-out and account switches: cached data stays visible with a message on sign-out, and local couple data is cleared if a different user signs in
+- `docs/ENGINEERING_NOTES.md`, a write-up of the hard problems and trade-offs behind the app
+- Unit tests for the retry policy, account transitions, zone routing, pairing helpers and error handling (49 tests in total)
+
 ### Changed
 
-- CI now fails when the build or tests fail, runs the `PekisTests` unit tests through the shared `Pekis` scheme, and lints with SwiftLint
-- Consolidated the AI-assistant guidelines into `.github/copilot-instructions.md`
-- App icon asset catalog reduced to a single compressed icon; removed an unused dashboard image
-
-- Split `CloudKitService` into focused extension files (content, sharing, word search) plus a standalone `MockCloudKitService`, and broke up the long share-acceptance and share-creation functions
-- SwiftLint now reports zero warnings
+- CI fails when the build or tests fail, runs the `PekisTests` unit tests, and lints with SwiftLint
+- Split `CloudKitService` into feature extensions and moved the mock into its own file
+- Reworked the README and the architecture, privacy, development and contributing docs, and linked the new engineering notes
+- Replaced the three identical app icon files with one compressed icon and removed an unused 1 MB image
+- Consolidated the AI assistant guidelines into `.github/copilot-instructions.md`
 
 ### Fixed
 
+- The shared `Pekis` scheme now runs the unit tests (`⌘U` and `xcodebuild test` previously refused to)
 - `PEKIS_SKIP_CLOUDKIT=1` (unsigned simulator previews) no longer hangs on the loading screen
-- The shared `Pekis` scheme is now configured for the test action, so `Cmd + U` and `xcodebuild test` run the unit tests
+- Cleared all SwiftLint warnings and the deprecated `onChange` calls
 
 ## [1.1.4] - 2026-07-01
 
