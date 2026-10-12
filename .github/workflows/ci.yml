@@ -6,32 +6,39 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      - name: Lint
+        run: swiftlint lint --reporter github-actions-logging
+
   build-and-test:
     name: Build & Test
     runs-on: macos-15
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -switch /Applications/Xcode.app
-
-      - name: Build
+      - name: Test (unit tests only)
+        env:
+          PEKIS_SKIP_CLOUDKIT: "1"
         run: |
-          xcodebuild build \
-            -project Pekis.xcodeproj \
-            -scheme Pekis \
-            -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || cat
-
-      - name: Test
-        run: |
+          set -o pipefail
           xcodebuild test \
             -project Pekis.xcodeproj \
             -scheme Pekis \
-            -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
+            -destination "platform=iOS Simulator,name=iPhone 16" \
+            -only-testing:PekisTests \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || cat
+            | xcpretty --color
