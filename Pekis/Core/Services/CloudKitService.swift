@@ -66,6 +66,11 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
     // MARK: - Setup
 
+    /// Lets the UI proceed without contacting CloudKit (unsigned simulator previews and tests).
+    func skipInitialLoad() {
+        hasLoadedInitialState = true
+    }
+
     func setup() async {
         isLoading = true
         defer { isLoading = false; hasLoadedInitialState = true }

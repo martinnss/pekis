@@ -130,6 +130,7 @@ struct PekisApp: App {
                     let isTestBundle = Bundle.allBundles.contains { $0.bundlePath.hasSuffix(".xctest") }
                     let skipCloudKit = ProcessInfo.processInfo.environment["PEKIS_SKIP_CLOUDKIT"] == "1"
                     guard !isTestBundle, !skipCloudKit else {
+                        if skipCloudKit { cloudKitService.skipInitialLoad() }
                         return
                     }
                     Task {

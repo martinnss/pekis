@@ -17,6 +17,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Fixed
 
+- `PEKIS_SKIP_CLOUDKIT=1` (unsigned simulator previews) no longer hangs on the loading screen
 - The shared `Pekis` scheme is now configured for the test action, so `Cmd + U` and `xcodebuild test` run the unit tests
 
 ## [1.1.4] - 2026-07-01
