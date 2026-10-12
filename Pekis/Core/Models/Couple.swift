@@ -59,6 +59,19 @@ extension Couple {
     }
 
     /// Convert to a CloudKit record for saving
+    /// True until Partner B has entered a display name after joining.
+    var isMissingPartnerBName: Bool {
+        partnerBName?.isEmpty ?? true
+    }
+
+    /// Returns this couple with `userID` registered as Partner B, unless a partner has already joined.
+    func acceptingPartner(userID: String) -> Couple {
+        guard partnerBIdentifier == nil else { return self }
+        var joined = self
+        joined.partnerBIdentifier = userID
+        return joined
+    }
+
     func toRecord(in zoneID: CKRecordZone.ID? = nil) -> CKRecord {
         let recordID: CKRecord.ID
         if let zoneID = zoneID {

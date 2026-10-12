@@ -12,11 +12,11 @@ extension CloudKitService {
         }
 
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
         let recordID = CKRecord.ID(recordName: WordSearchSession.recordName(for: couple.id), zoneID: zoneID)
 
         do {
-            let record = try await database.record(for: recordID)
+            let record = try await withRetry { try await database.record(for: recordID) }
             return WordSearchSession(record: record)
         } catch let error as CKError where error.code == .unknownItem {
             return nil
@@ -31,11 +31,11 @@ extension CloudKitService {
         }
 
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
         let record = session.toRecord(in: zoneID)
 
         do {
-            let savedRecord = try await database.save(record)
+            let savedRecord = try await withRetry { try await database.save(record) }
             guard let savedSession = WordSearchSession(record: savedRecord) else {
                 throw CloudKitError.saveFailed(
                     NSError(
@@ -57,11 +57,11 @@ extension CloudKitService {
         }
 
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
         let recordID = CKRecord.ID(recordName: WordSearchSession.recordName(for: couple.id), zoneID: zoneID)
 
         do {
-            _ = try await database.deleteRecord(withID: recordID)
+            _ = try await withRetry { try await database.deleteRecord(withID: recordID) }
         } catch let error as CKError where error.code == .unknownItem {
             return
         } catch {

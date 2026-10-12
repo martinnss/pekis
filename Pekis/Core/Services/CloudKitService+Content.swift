@@ -24,13 +24,13 @@ extension CloudKitService {
 
         // Use the fetched couple record's actual zone (it carries the correct ownerName
         // for Partner B, who lives in the sharedDatabase). Both partners write to the same
-        // zone — Partner A via privateDatabase, Partner B via sharedDatabase.
+        // zone: Partner A via privateDatabase, Partner B via sharedDatabase.
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
         let record = note.toRecord(in: zoneID)
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
 
         do {
-            _ = try await database.save(record)
+            _ = try await withRetry { try await database.save(record) }
         } catch {
             throw CloudKitError.saveFailed(error)
         }
@@ -45,17 +45,17 @@ extension CloudKitService {
         let query = CKQuery(recordType: LoveNote.recordType, predicate: predicate)
         query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
 
-        // Must specify inZoneWith — records(matching:) without a zone only
+        // Must specify inZoneWith, because records(matching:) without a zone only
         // searches the DEFAULT zone, not our custom CoupleZone. Also route to the
         // correct database (private for Partner A, shared for Partner B). All records
         // for both partners live in Partner A's zone, so one database fetch is enough.
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
 
         do {
             var notes: [LoveNote] = []
 
-            let results = try await database.records(matching: query, inZoneWith: zoneID)
+            let results = try await withRetry { try await database.records(matching: query, inZoneWith: zoneID) }
             for (_, result) in results.matchResults {
                 if case .success(let record) = result,
                    let note = LoveNote(record: record) {
@@ -95,10 +95,10 @@ extension CloudKitService {
         // Same zone routing as sendLoveNote.
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
         let record = answer.toRecord(in: zoneID)
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
 
         do {
-            _ = try await database.save(record)
+            _ = try await withRetry { try await database.save(record) }
         } catch {
             throw CloudKitError.saveFailed(error)
         }
@@ -114,12 +114,12 @@ extension CloudKitService {
 
         // Same zone + database routing as fetchLoveNotes.
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
 
         do {
             var answers: [ThisOrThatAnswer] = []
 
-            let results = try await database.records(matching: query, inZoneWith: zoneID)
+            let results = try await withRetry { try await database.records(matching: query, inZoneWith: zoneID) }
             for (_, result) in results.matchResults {
                 if case .success(let record) = result,
                    let answer = ThisOrThatAnswer(record: record) {
@@ -157,7 +157,7 @@ extension CloudKitService {
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
         let record = moment.toRecord(in: zoneID)
 
-        // Write JPEG data to a temp file — CKAsset requires a file URL
+        // Write JPEG data to a temp file, since CKAsset requires a file URL
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(moment.id + ".jpg")
         do {
@@ -169,10 +169,10 @@ extension CloudKitService {
 
         record[MomentShareRecord.RecordKey.photo.rawValue] = CKAsset(fileURL: tempURL)
 
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
 
         do {
-            _ = try await database.save(record)
+            _ = try await withRetry { try await database.save(record) }
         } catch {
             throw CloudKitError.saveFailed(error)
         }
@@ -193,11 +193,11 @@ extension CloudKitService {
         query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
 
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(zoneID)
 
         do {
             var moments: [MomentShareRecord] = []
-            let results = try await database.records(matching: query, inZoneWith: zoneID)
+            let results = try await withRetry { try await database.records(matching: query, inZoneWith: zoneID) }
             for (_, result) in results.matchResults {
                 if case .success(let record) = result,
                    let moment = MomentShareRecord(record: record) {

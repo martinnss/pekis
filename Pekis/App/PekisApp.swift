@@ -14,7 +14,7 @@ import UIKit
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     // Static reference because UIApplication.shared.delegate returns a SwiftUI
-    // wrapper when using @UIApplicationDelegateAdaptor — direct cast fails.
+    // wrapper when using @UIApplicationDelegateAdaptor, so a direct cast fails.
     static weak var shared: AppDelegate?
 
     override init() {
@@ -123,7 +123,7 @@ struct PekisApp: App {
                 .onAppear {
                     appDelegate.cloudKitService = cloudKitService
                     NotificationManager.shared.requestAuthorization()
-                    // Skip CloudKit in test environments — entitlements are absent
+                    // Skip CloudKit in test environments, where entitlements are absent
                     // when built with CODE_SIGNING_ALLOWED=NO, causing CKContainer to crash.
                     // The PEKIS_SKIP_CLOUDKIT env flag offers the same escape hatch for
                     // unsigned UI-preview builds on the simulator (never set in shipping).
@@ -135,6 +135,7 @@ struct PekisApp: App {
                     }
                     Task {
                         await cloudKitService.setup()
+                        cloudKitService.startMonitoringAccount()
                         try? await cloudKitService.subscribeToChanges()
                         NotificationManager.shared.scheduleNotifications(
                             reunionDate: cloudKitService.couple?.reunionDate

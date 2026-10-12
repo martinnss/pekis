@@ -34,6 +34,8 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
     @Published var errorMessage: String?
     @Published var pendingShareMetadata: CKShare.Metadata?
     @Published var needsPartnerName = false
+    /// Latest iCloud account status reported by CloudKit (updated on `.CKAccountChanged`).
+    @Published var accountStatus: CKAccountStatus = .couldNotDetermine
 
     var isPaired: Bool {
         guard let couple = couple else { return false }
@@ -43,7 +45,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
     // MARK: - Internal State
     // Internal (not private) so the feature extensions in `CloudKitService+*.swift` can share it.
 
-    // Lazy to defer CKContainer creation until first use — prevents crash in test
+    // Lazy to defer CKContainer creation until first use. This prevents a crash in test
     // environments where entitlements are absent (CODE_SIGNING_ALLOWED=NO).
     lazy var container: CKContainer = CKContainer(identifier: containerIdentifier)
     lazy var privateDatabase: CKDatabase = container.privateCloudDatabase
@@ -57,6 +59,20 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
     var coupleRecord: CKRecord?
     var shareRecord: CKShare?
+    var accountObserver: NSObjectProtocol?
+
+    /// The database that holds `zoneID`: private for the zone owner, shared for the partner.
+    func databaseContaining(_ zoneID: CKRecordZone.ID) -> CKDatabase {
+        switch CoupleDatabaseScope.scope(for: zoneID) {
+        case .privateDatabase: return privateDatabase
+        case .sharedDatabase: return sharedDatabase
+        }
+    }
+
+    /// Runs a CloudKit call, retrying transient failures with exponential backoff.
+    func withRetry<Result>(_ operation: () async throws -> Result) async throws -> Result {
+        try await CloudKitRetry.perform(operation: operation)
+    }
 
     // MARK: - Initialization
 
@@ -77,7 +93,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
 
         do {
             // Get current user ID
-            let userID = try await container.userRecordID()
+            let userID = try await withRetry { try await container.userRecordID() }
             currentUserID = userID.recordName
 
             // Ensure the custom zone exists
@@ -190,14 +206,15 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             throw CloudKitError.shareFailed(error)
         }
 
-        guard var couple = await fetchSharedCoupleAfterAccept() else {
+        guard let sharedCouple = await fetchSharedCoupleAfterAccept() else {
             PekisLogger.cloudKit.error("acceptShare: could not fetch shared couple after 3 attempts")
             throw CloudKitError.shareNotFound
         }
 
+        var couple = sharedCouple
         if let userID = currentUserID, couple.partnerBIdentifier == nil {
             PekisLogger.cloudKit.debug("acceptShare: setting partnerBIdentifier and saving couple")
-            couple.partnerBIdentifier = userID
+            couple = couple.acceptingPartner(userID: userID)
             do {
                 try await saveUpdatedCouple(couple)
             } catch {
@@ -210,7 +227,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             self.couple = couple
             couple.saveToCache()
         }
-        needsPartnerName = couple.partnerBName == nil || couple.partnerBName?.isEmpty == true
+        needsPartnerName = couple.isMissingPartnerBName
         PekisLogger.cloudKit.debug("acceptShare: done, needsPartnerName=\(self.needsPartnerName, privacy: .public)")
     }
 
@@ -222,7 +239,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             try await Task.sleep(nanoseconds: 1_000_000_000)
             if currentUserID != nil { return }
         }
-        PekisLogger.cloudKit.error("acceptShare: timed out waiting for currentUserID — user may not be signed into iCloud")
+        PekisLogger.cloudKit.error("acceptShare: timed out waiting for currentUserID, user may not be signed into iCloud")
         throw CloudKitError.notAuthenticated
     }
 
@@ -313,11 +330,10 @@ extension CloudKitService {
         }
 
         // Route to shared database when the record belongs to a partner's zone
-        let ownerName = record.recordID.zoneID.ownerName
-        let database = ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
+        let database = databaseContaining(record.recordID.zoneID)
 
         do {
-            let savedRecord = try await database.save(record)
+            let savedRecord = try await withRetry { try await database.save(record) }
             self.coupleRecord = savedRecord
 
             if let couple = Couple(record: savedRecord) {
@@ -388,9 +404,9 @@ extension CloudKitService {
         if let record = coupleRecord {
             let zoneID = record.recordID.zoneID
             do {
-                if zoneID.ownerName == CKCurrentUserDefaultName {
+                if CoupleDatabaseScope.scope(for: zoneID) == .privateDatabase {
                     // Owner: deleting the zone erases the couple record, the
-                    // share, and every shared record — for both partners.
+                    // share, and every shared record, for both partners.
                     _ = try await privateDatabase.deleteRecordZone(withID: coupleZoneID)
                 } else {
                     // Participant: leaving the shared zone removes our access.
@@ -402,10 +418,11 @@ extension CloudKitService {
             }
         }
 
-        resetAfterDisconnect()
+        resetLocalState()
     }
 
-    private func resetAfterDisconnect() {
+    /// Clears per-couple state held in memory and on disk. The signed-in user ID is kept so a new couple can be created.
+    func resetLocalState() {
         coupleRecord = nil
         shareRecord = nil
         pendingShareMetadata = nil

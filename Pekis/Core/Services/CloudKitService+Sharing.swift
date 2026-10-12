@@ -36,7 +36,7 @@ extension CloudKitService {
         }
     }
 
-    /// Ensures a live `CKRecord` for the couple exists — it may have been loaded from cache
+    /// Ensures a live `CKRecord` for the couple exists. It may have been loaded from cache
     /// with no in-memory record (for example after an app restart).
     private func loadCoupleRecord() async throws -> CKRecord {
         if coupleRecord == nil {
@@ -133,7 +133,7 @@ extension CloudKitService {
 
         let subscription = CKDatabaseSubscription(subscriptionID: subscriptionID)
         let notificationInfo = CKSubscription.NotificationInfo()
-        notificationInfo.shouldSendContentAvailable = true // Silent push — no visible banner
+        notificationInfo.shouldSendContentAvailable = true // Silent push, no visible banner
         subscription.notificationInfo = notificationInfo
 
         _ = try? await database.save(subscription)
