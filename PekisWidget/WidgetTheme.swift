@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Static color palette for the Pekis widget — matches the app's cozy light theme.
+/// Static color palette for the Pekis widget. Matches the app's cozy light theme.
 enum WidgetPalette {
     static let cream       = Color(red: 1.0,   green: 0.969, blue: 0.937) // #FFF7EF
     static let creamDeep   = Color(red: 0.988, green: 0.922, blue: 0.851) // #FCEBDA

@@ -4,7 +4,7 @@ import SwiftUI
 //
 // The app moved away from a dark purple theme to a bright, friendly, game-like
 // look. Purple is kept as the *signature brand accent* (logo + primary CTAs)
-// but no longer dominates — most surfaces are cream/white with warm pastel
+// but no longer dominates. Most surfaces are cream/white with warm pastel
 // accents. Raw values live in `PekisPalette` once, then are surfaced both as
 // `Color.pekisX` (for fills/backgrounds) and as `.pekisX` shorthand (for
 // `.foregroundStyle` / `.tint`, via the `ShapeStyle` extension below).

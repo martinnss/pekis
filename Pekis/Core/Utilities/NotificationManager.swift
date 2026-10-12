@@ -30,7 +30,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     func scheduleNotifications(reunionDate: Date?) {
         guard let targetDate = reunionDate, targetDate > Date() else {
-            // No upcoming reunion date — clear stale countdown notifications
+            // No upcoming reunion date, so clear stale countdown notifications
             UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
             return
         }

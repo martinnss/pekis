@@ -215,7 +215,7 @@ private struct CreateOrJoinStepView: View {
         } message: {
             Text(
                 "Ask your partner to share their invite link with you in iMessage. "
-                    + "Tap the link directly in the message — don't open it in Safari."
+                    + "Tap the link directly in the message, not in Safari."
             )
         }
     }

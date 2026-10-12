@@ -330,7 +330,7 @@ private extension DashboardView {
             .frame(maxWidth: .infinity)
             .background(
                 ZStack {
-                    // 3D bottom "lip" — makes each card feel like a physical tile.
+                    // 3D bottom "lip" that makes each card feel like a physical tile.
                     RoundedRectangle(cornerRadius: 26, style: .continuous)
                         .fill(accent.darker(0.10))
                         .offset(y: 5)

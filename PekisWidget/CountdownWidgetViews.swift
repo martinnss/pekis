@@ -528,7 +528,7 @@ private struct AccessoryInlineView: View {
     )
 }
 
-#Preview("Small – Today", as: .systemSmall) {
+#Preview("Small, Today", as: .systemSmall) {
     PekisCountdownWidget()
 } timeline: {
     CountdownEntry(

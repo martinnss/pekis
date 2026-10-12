@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Chunky "candy" capsule button — a rounded pill with a darker bottom lip that
+/// Chunky "candy" capsule button: a rounded pill with a darker bottom lip that
 /// gives a tactile 3D press, squishing down on tap with a spring + haptic.
 /// Signature kept (`background`/`foreground`/`borderColor`) so existing call
 /// sites upgrade to the cozy look automatically.
@@ -18,7 +18,7 @@ struct CapsuleButtonStyle: ButtonStyle {
             .padding(.vertical, 15)
             .background(
                 ZStack {
-                    // Bottom lip (the "3D" base) — a darkened copy peeking below.
+                    // Bottom lip (the "3D" base), a darkened copy peeking below.
                     Capsule()
                         .fill(background.darker(0.18))
                         .offset(y: pressed ? 2 : 5)
@@ -51,7 +51,7 @@ struct SquishyButtonStyle: ButtonStyle {
 }
 
 extension Color {
-    /// Darken by blending toward black — used for button "lip" depth.
+    /// Darken by blending toward black. Used for button "lip" depth.
     func darker(_ amount: Double) -> Color {
         let ui = UIColor(self)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0

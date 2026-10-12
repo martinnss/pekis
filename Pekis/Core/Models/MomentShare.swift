@@ -3,7 +3,7 @@ import CloudKit
 import UIKit
 
 /// Represents a daily shared photo moment between partners.
-/// Stored in the couple's shared CloudKit zone — both partners can read and write.
+/// Stored in the couple's shared CloudKit zone, so both partners can read and write.
 struct MomentShareRecord: Identifiable {
     let id: String
     let coupleID: String
@@ -61,7 +61,7 @@ extension MomentShareRecord {
         self.prompt = record[RecordKey.prompt.rawValue] as? String ?? ""
         self.createdAt = record[RecordKey.createdAt.rawValue] as? Date ?? Date()
 
-        // CKAsset is downloaded to a local temp file — read it immediately.
+        // CKAsset is downloaded to a local temp file, so read it immediately.
         if let asset = record[RecordKey.photo.rawValue] as? CKAsset,
            let fileURL = asset.fileURL,
            let data = try? Data(contentsOf: fileURL) {

@@ -4,7 +4,7 @@ import Foundation
 ///
 /// This is the single value the main app and the widget extension exchange
 /// through their shared App Group container. It deliberately knows nothing
-/// about CloudKit — the app projects its `Couple` into this struct and the
+/// about CloudKit. The app projects its `Couple` into this struct and the
 /// widget reads it back. Keeping it Foundation-only means it compiles into
 /// both targets without dragging CloudKit into the extension.
 struct CountdownSnapshot: Codable, Equatable {
@@ -14,7 +14,7 @@ struct CountdownSnapshot: Codable, Equatable {
     var partnerName: String?
     /// Whether a partner has actually joined the couple.
     var isPaired: Bool
-    /// When the couple was created — used to draw an elapsed-progress ring.
+    /// When the couple was created, used to draw an elapsed-progress ring.
     var startDate: Date?
 
     init(

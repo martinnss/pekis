@@ -8,11 +8,11 @@ import WidgetKit
 /// - **Shared** (default): the countdown follows the reunion date the couple
 ///   set inside the app, so both partners' widgets stay in sync.
 /// - **Personal**: flip on "Use my own date" to point the widget at any date
-///   with any label — perfect for someone who just wants a private countdown.
+///   with any label, which suits someone who just wants a private countdown.
 struct CountdownConfigIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource { "Countdown" }
     static var description: IntentDescription {
-        IntentDescription("Count down to the moment you reunite — or to any date you choose.")
+        IntentDescription("Count down to the moment you reunite, or to any date you choose.")
     }
 
     @Parameter(title: "Label", default: "Until we reunite")

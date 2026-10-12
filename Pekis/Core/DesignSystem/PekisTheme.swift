@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - Pekis Theme
 //
 // Typography, card styling, and accent helpers for the cozy redesign.
-// Everything uses `design: .rounded` — the single biggest "friendly game"
-// signal — and warm ink colors instead of white-on-dark.
+// Everything uses `design: .rounded` (the biggest "friendly game" signal)
+// and warm ink colors instead of white-on-dark.
 
 enum PekisFont {
     static func bigTitle() -> Font { .system(size: 34, weight: .heavy, design: .rounded) }
@@ -74,7 +74,7 @@ extension View {
 
 // MARK: - Speech bubble
 
-/// A rounded speech bubble with a little downward tail — lets the mascot "talk"
+/// A rounded speech bubble with a little downward tail, so the mascot can "talk"
 /// to the player, a hallmark of friendly game UIs.
 struct PekiSpeechBubble: View {
     let text: String

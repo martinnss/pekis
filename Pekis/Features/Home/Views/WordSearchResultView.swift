@@ -104,7 +104,7 @@ struct WordSearchResultView: View {
         case 6: return "You found all the words! Marry me NOW 💍"
         case 4...5: return "You found almost all of them. So close Pekis!"
         case 1...3: return "You found some words. Love you anyway!"
-        default: return "Better luck next time — I still love you!"
+        default: return "Better luck next time, I still love you!"
         }
     }
 }

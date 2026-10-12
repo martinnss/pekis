@@ -98,7 +98,7 @@ final class MomentShareViewModel: ObservableObject {
                 }
             }
         } catch {
-            // Silently fail — show empty state rather than an error on load
+            // Silently fail and show the empty state rather than an error on load
         }
     }
 

@@ -37,12 +37,12 @@ final class CoupleOnboardingViewModel: ObservableObject {
         self.cloudKitService = service
 
         if service.needsPartnerName {
-            // Partner B just accepted a share — prompt for their name
+            // Partner B just accepted a share, so prompt for their name
             step = .enterName
         } else if service.isPaired {
             step = .complete
         } else if service.couple != nil {
-            // Couple exists but partner hasn't joined — show waiting screen
+            // Couple exists but partner hasn't joined, so show waiting screen
             Task { await fetchShareURL() }
             step = .waitingForPartner
         }

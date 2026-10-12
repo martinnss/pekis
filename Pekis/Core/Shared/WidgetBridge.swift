@@ -6,7 +6,7 @@ import WidgetKit
 enum WidgetBridge {
     /// Projects the current couple into a `CountdownSnapshot`, persists it to the
     /// shared store, and reloads every widget timeline. Safe to call from any
-    /// site that mutates the couple — it is cheap and idempotent.
+    /// site that mutates the couple. It is cheap and idempotent.
     @MainActor
     static func update(couple: Couple?, currentUserID: String?) {
         let snapshot: CountdownSnapshot

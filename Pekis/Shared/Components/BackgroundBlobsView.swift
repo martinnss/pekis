@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The cozy *world* behind every screen — a soft lavender→cream sky with a sun,
+/// The cozy *world* behind every screen: a soft lavender→cream sky with a sun,
 /// drifting clouds, twinkling sparkles and rolling hills along the bottom. This
 /// is what gives Pekis its "Animal-Crossing-but-purple" game feel rather than a
 /// flat app background. Drop it inside a ZStack before content.
@@ -95,7 +95,7 @@ private struct Sparkle: Identifiable {
     let delay: Double
 }
 
-/// A handful of tiny twinkling sparkles — pure decoration.
+/// A handful of tiny twinkling sparkles, pure decoration.
 private struct FloatingSparkles: View {
     private let seeds: [Sparkle] = [
         Sparkle(x: 0.15, y: 0.20, scale: 0.7, delay: 0.0),

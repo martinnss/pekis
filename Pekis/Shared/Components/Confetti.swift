@@ -58,7 +58,7 @@ private struct HeartSeed: Identifiable {
     let scale: CGFloat
 }
 
-/// Floating hearts that rise and fade — used by the mascot duo for love/engaged.
+/// Floating hearts that rise and fade. Used by the mascot duo for love/engaged.
 struct FloatingHearts: View {
     var active: Bool
     @State private var animate = false

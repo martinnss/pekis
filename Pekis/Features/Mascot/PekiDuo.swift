@@ -4,8 +4,8 @@ import SwiftUI
 /// relationship state:
 /// - `.idle` / `.happy`: sitting, breathing, blinking & swishing its tail
 /// - `.hopeful`: waving (used after an invite is sent, before the partner joins)
-/// - `.engaged` / `.love`: heart eyes with floating hearts — the "we're
-///   connected" payoff
+/// - `.engaged` / `.love`: heart eyes with floating hearts (the "we're
+///   connected" payoff)
 /// - `.celebrate`: an excited bounce
 ///
 /// Kept under the original `PekiDuo` name so every call site stays unchanged;

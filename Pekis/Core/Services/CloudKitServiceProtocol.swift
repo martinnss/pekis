@@ -92,7 +92,7 @@ protocol CloudKitServiceProtocol: ObservableObject {
     func saveMoment(imageData: Data, prompt: String) async throws
 
     /// Fetch today's moments for both partners
-    /// - Returns: Array of today's MomentShareRecord (0–2 items: one per partner)
+    /// - Returns: Array of today's MomentShareRecord (0 to 2 items, one per partner)
     func fetchTodaysMoments() async throws -> [MomentShareRecord]
 
     // MARK: - Word Search Sessions

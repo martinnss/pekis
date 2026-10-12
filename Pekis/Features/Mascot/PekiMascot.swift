@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A single code-drawn "Peki" cat — a round, friendly kitty with pointed ears,
+/// A single code-drawn "Peki" cat: a round, friendly kitty with pointed ears,
 /// expressive eyes, a little heart nose, whiskers, blush cheeks, paws and a
 /// swishing tail. Fully procedural so it can breathe, blink, bob, swish and
 /// react to `mood` with no image assets or external animation libraries.
@@ -236,7 +236,7 @@ struct PekiMascot: View {
 
 // MARK: - Shapes
 
-/// A pointed cat ear — a triangle with a softly rounded tip.
+/// A pointed cat ear: a triangle with a softly rounded tip.
 private struct CatEar: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
@@ -285,7 +285,7 @@ private struct CatTail: Shape {
     }
 }
 
-/// Mouth path — a smile arc, or a rounded open "happy" mouth.
+/// Mouth path: a smile arc, or a rounded open "happy" mouth.
 private struct MascotMouth: Shape {
     var open: Bool
 
