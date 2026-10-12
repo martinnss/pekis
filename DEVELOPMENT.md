@@ -1,24 +1,13 @@
 # Development Guide
 
-This guide describes how to work on Pekis locally and how the current repository is wired.
+How to build, test and work on Pekis locally.
 
 ## Prerequisites
 
-- macOS with a recent Xcode installation that can open `Pekis.xcodeproj`
+- macOS with Xcode 16 or newer
 - An Apple Developer team if you want to run CloudKit-backed flows on a real device or a signed simulator
 - An iCloud account signed in on the device or simulator for pairing, sharing, and CloudKit testing
 - Homebrew if you want to install optional local tooling such as SwiftLint
-
-## Project Snapshot
-
-The current repository is an iOS SwiftUI app with:
-
-- Feature-based MVVM structure
-- CloudKit for persistent shared couple data
-- A selective local cache for some shared text features
-- CloudKit-backed Word Search session coordination for shared puzzle starts
-- A waiting-room UX that surfaces player readiness and a synced scheduled start before the game begins
-- GitHub Actions CI that runs `xcodebuild build` and `xcodebuild test` on the `Pekis` scheme
 
 ## Open the Project
 
@@ -46,9 +35,9 @@ After changing identifiers:
 2. Create or select the matching CloudKit container in your Apple Developer account.
 3. Confirm the app can access that container on a signed-in device or simulator.
 
-## Local Validation Commands
+## Running things locally
 
-Build the app locally:
+Build:
 
 ```bash
 xcodebuild build \
@@ -58,70 +47,35 @@ xcodebuild build \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-Run tests locally:
-
-```bash
-xcodebuild test \
-  -project Pekis.xcodeproj \
-  -scheme Pekis \
-  -destination 'generic/platform=iOS Simulator' \
-  CODE_SIGNING_ALLOWED=NO
-```
-
-Run SwiftLint if it is installed:
-
-```bash
-./scripts/run_swiftlint.sh
-```
-
-Install SwiftLint with Homebrew if needed:
-
-```bash
-brew install swiftlint
-```
-
-## CloudKit Development Notes
-
-- `PekisApp` skips CloudKit setup when tests run with `CODE_SIGNING_ALLOWED=NO`, because test environments do not have the required entitlements
-- Share acceptance is handled in `Pekis/App/PekisApp.swift` and uses the configured CloudKit container directly
-- `CloudKitService` owns setup, zone creation, existing-couple discovery, sharing, and subscription refresh behavior
-- Pairing and sharing flows should be tested with iCloud enabled, not only through simulator-only unit tests
-
-## Shared Word Search Session Notes
-
-- Word Search shared play now uses `CloudKitCoupleMatchmakingService`
-- The active game is represented as a short-lived `WordSearchSession` record in the couple's shared CloudKit zone
-- Both devices generate the board from the stored session seed and start from the same scheduled countdown time
-- The waiting screen should show local readiness, partner readiness, and the synced countdown state while both players are joining
-- `SimulationMatchmakingService` still exists as a local fallback when paired CloudKit context is unavailable
-
-Focused validation for this slice:
+Unit tests (no signing or iCloud needed). If you have several simulators with the same name, use the UDID from `xcrun simctl list devices`:
 
 ```bash
 xcodebuild test \
   -project Pekis.xcodeproj \
   -scheme Pekis \
   -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
-  CODE_SIGNING_ALLOWED=NO \
-  -only-testing:PekisTests/WordSearchTests \
-  -only-testing:PekisTests/WordSearchSessionTests
+  -only-testing:PekisTests \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
-## Repository Structure
+Lint (`brew install swiftlint` first):
 
-Key directories:
+```bash
+swiftlint
+```
 
-- `Pekis/App`: app entry point and lifecycle integration
-- `Pekis/Core`: models, services, utilities, and shared content
-- `Pekis/Features`: onboarding, dashboard, and activity features
-- `PekisTests`: unit and model logic coverage
-- `PekisUITests`: UI launch coverage
-- `.github/workflows`: CI automation
+To look at the UI on an unsigned simulator build, launch the app with the environment variable `PEKIS_SKIP_CLOUDKIT=1`. It skips CloudKit and goes straight to onboarding. Creating a couple still needs a signed build.
 
-## Before Opening a Pull Request
+## CloudKit notes
 
-- Build the `Pekis` scheme successfully
-- Run the relevant tests for your change
-- Run SwiftLint if available in your environment
-- Re-test CloudKit flows on a signed-in device or simulator if you changed onboarding, sharing, or shared-data behavior
-- Update `README.md`, `ARCHITECTURE.md`, `PRIVACY.md`, or `SECURITY.md` if your change alters the public architecture or data-handling story
+- `PekisApp` skips CloudKit setup under unit tests (and with `PEKIS_SKIP_CLOUDKIT=1`) because an unsigned build has no entitlements and `CKContainer` would crash.
+- `CloudKitService` is split by feature: `CloudKitService.swift` (setup and couples), `+Content` (notes, answers, moments), `+Sharing` (share links and subscriptions), `+WordSearch`, and `+Account` (iCloud account changes).
+- Test pairing and sharing with two real iCloud accounts. Unit tests can't cover that.
+- Word Search shared play uses `CloudKitCoupleMatchmakingService` and a short-lived `WordSearchSession` record. `SimulationMatchmakingService` is the local stand-in for solo play.
+
+## Before opening a pull request
+
+- The `Pekis` scheme builds and the unit tests pass.
+- SwiftLint reports nothing.
+- If you touched onboarding, sharing or shared data, try it on a device or simulator signed into iCloud.
+- Update the README, ARCHITECTURE or PRIVACY if your change alters them.

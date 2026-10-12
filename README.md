@@ -1,230 +1,102 @@
 # Pekis 🐧
 
-![Platform](https://img.shields.io/badge/Platform-iOS-black)
+[![CI](https://github.com/martinnss/pekis/actions/workflows/ci.yml/badge.svg)](https://github.com/martinnss/pekis/actions/workflows/ci.yml)
+![Platform](https://img.shields.io/badge/iOS-17%2B-black)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/License-MIT-blue)
-![Status](https://img.shields.io/badge/Status-Active_Development-green)
 
-**Pekis** is a dedicated iOS application designed to bridge the gap for couples in long-distance relationships. Built with **SwiftUI** and a privacy-conscious architecture, it provides a shared digital space for connection, play, and intimacy without relying on a heavy custom backend for core relationship data.
+**A shared space for long-distance couples, built on SwiftUI and CloudKit with no backend of my own.**
 
-> **Technical Overview:** Pekis uses feature-based MVVM, structured concurrency (`async/await`), CloudKit sharing for persistent couple data, and lightweight deterministic coordination for shared gameplay.
-
-Repository docs: [ARCHITECTURE.md](ARCHITECTURE.md), [DEVELOPMENT.md](DEVELOPMENT.md), [CONTRIBUTING.md](CONTRIBUTING.md), [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md).
-
----
-
-## 🎯 Project Goal
-
-Long-distance relationships are hard. Texting isn't always enough. Pekis aims to provide meaningful interactions through structured activities rather than just passive messaging.
-
-**Core Philosophy:**
-*   **Intentionality:** Every feature is designed to spark a specific type of connection (fun, deep, or spontaneous).
-*   **Privacy:** Your relationship data belongs to you, not a server.
-*   **Native Experience:** A SwiftUI-first interface with native iOS integrations where they add real value.
-
----
-
-## ✨ Features
-
-*   **📸 Moment Share:** Daily photo sharing backed by CloudKit `CKAsset` uploads.
-*   **💌 Love Notes:** Shared notes that sync across the paired couple space.
-*   **🎲 Date Roulette:** A local date-idea spinner powered by curated in-app content.
-*   **🗣️ Topic Generator:** Conversation starters drawn from a built-in prompt library.
-*   **🧩 Word Search:** A synchronized puzzle experience where both devices generate the same board from a shared session seed, with CloudKit-backed ready/start coordination.
-*   **⚖️ This or That:** A compatibility game that stores both partners' answers and reveals matches over time.
-*   **⏳ Countdown Widget:** Home Screen and Lock Screen widgets counting down to your next reunion, configurable via App Intents.
-
----
-
-## 📸 Screenshots
+Two people pair through an invite link, then share love notes, a daily photo, a *This or That* compatibility game, a synchronized Word Search, and a Home Screen countdown to the day they next see each other. All relationship data lives in the couple's own iCloud. There is no server for me to run, secure or leak.
 
 | Dashboard | Daily Moment | Countdown Widget |
 | :---: | :---: | :---: |
-| ![Home dashboard while waiting for a partner to join](docs/screenshots/dashboard-waiting-partner.jpg) | ![Daily Moment photo sharing between partners](docs/screenshots/daily-moment-share.jpg) | ![Until We Reunite iOS home screen widgets](docs/screenshots/countdown-widget.jpg) |
-| Invite flow, next-visit planning, and the Peki duo mascot | Daily prompts, side-by-side photo sharing, and partner sync status | Small and medium widgets counting down to your next reunion |
+| ![Dashboard while waiting for a partner to join](docs/screenshots/dashboard-waiting-partner.jpg) | ![Daily photo sharing between partners](docs/screenshots/daily-moment-share.jpg) | ![Home Screen countdown widgets](docs/screenshots/countdown-widget.jpg) |
 
-**Dashboard — Waiting for Partner.** The home screen after you create a couple space but before your partner joins. The Peki mascots reflect pairing status, a speech bubble nudges you to share the invite link, and the next-visit card lets you set your reunion date early.
+## Why this project is technically interesting
 
-**Daily Moment.** A lightweight daily photo ritual with rotating prompts (e.g. *"Show me your outfit of the day!"*). Each partner posts independently; the screen shows your upload alongside a placeholder until your partner shares theirs.
+The product is simple on purpose. The interesting part is making two phones agree with no server in between.
 
-**Countdown Widget.** Native iOS widgets (small and medium) that surface your reunion countdown on the home screen — *"Until We Reunite"* with days remaining and the target date.
+- **Pairing over CloudKit sharing.** One record zone is reached through *two different databases* (private for the owner, shared for the partner). Getting routing, subscriptions and the cold-launch share-link path right took real debugging.
+- **Synchronized play without a game server.** Both phones generate the identical Word Search from one shared seed and count down to one shared start time. Same seed always gives the same board, and that property is unit-tested.
+- **Resilient sync.** Transient failures retry with exponential backoff (and honor the server's retry hint). iCloud sign-out and account switches are handled so one user's data is never shown to another.
+- **A widget that never touches the network.** The app pushes a tiny snapshot through an App Group and WidgetKit reloads from it.
 
----
+**Read the [Engineering Notes](docs/ENGINEERING_NOTES.md)** for nine problems, each written up as symptom, cause, fix and lesson, plus a table of trade-offs I chose deliberately (last-writer-wins, no backend, synchronized vs. shared state) and where each would break.
 
-## 🔒 Privacy-First Sync Model
+## Features
 
-Pekis is built around **CloudKit-backed couple data with selective local caching**.
+- **Moment Share:** daily photo prompt, uploaded as a `CKAsset`
+- **Love Notes:** shared notes that sync live through CloudKit push
+- **This or That:** both partners answer, matches are revealed
+- **Word Search:** synchronized puzzle with a waiting room and scheduled start
+- **Date Roulette** and **Topic Generator:** local, offline content
+- **Countdown Widget:** Home Screen and Lock Screen, configurable with App Intents
 
-*   **No Traditional Relationship Backend:** Core shared data does not live in a custom database owned by the developer.
-*   **CloudKit for Persistent Shared State:** Couple data, love notes, This or That answers, and photo moments are stored through Apple's private/shared CloudKit databases.
-*   **Selective Local Cache:** Couple state, notes, and answer history can fall back to cached local data when cloud fetches fail.
-*   **Deterministic Shared Play:** Word Search synchronizes the board through on-device generation from a shared seed rather than a live shared-state game server.
-*   **Shared Session Coordination:** Word Search uses a short-lived CloudKit session record for ready state, countdown timing, and winner detection; it is not a peer-to-peer transport layer.
+## Architecture
 
----
-
-## 🛠 How to Build
-
-### Prerequisites
-*   Xcode 16.0+
-*   iOS 17.0+ Simulator or Device
-
-### Installation
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/martinnss/Pekis.git
-    cd Pekis
-    ```
-
-2.  **Create your local environment file:**
-    Copy `.env.example` to `.env` and replace the team ID, bundle identifier, and CloudKit container with values you control.
-
-3.  **Open the project:**
-    Double-click `Pekis.xcodeproj` to open in Xcode.
-
-4.  **Verify signing and capabilities when needed:**
-    If you plan to test CloudKit flows on a signed simulator or physical device, confirm the Pekis target still has the iCloud and CloudKit capabilities enabled for the identifiers you put in `.env`.
-
-5.  **Build and Run:**
-    Press `Cmd + R` to build and run on your selected simulator.
-
-### Configuration (Optional)
-*   **Linting:** This project uses `SwiftLint` to enforce code style. If you don't have it installed, the build script may warn you. Install it via Homebrew: `brew install swiftlint`.
-*   **Environment:** Copy `.env.example` to `.env` and set your Apple team, bundle identifier, and CloudKit container before working on signed CloudKit flows.
-
----
-
-## 🏗 Architecture
-
-Pekis is organized as **feature-based MVVM + a protocol-oriented service layer + CloudKit-backed shared state**. The design goal is to keep the SwiftUI surface simple while concentrating persistence, synchronization, and platform-specific behavior in well-defined services.
-
-For a deeper breakdown, see [ARCHITECTURE.md](ARCHITECTURE.md).
-
-### Architecture at a Glance
-
-*   **Views:** Declarative SwiftUI screens responsible for layout, navigation, and user interaction.
-*   **ViewModels:** `@MainActor` observable objects that own feature state through `@Published` properties and call async services.
-*   **Models:** Lightweight structs that map cleanly to CloudKit records and, where needed, local cache storage.
-*   **Services:** Protocol-backed infrastructure for CloudKit, sharing, matchmaking, puzzle generation, haptics, and notifications.
-*   **Data Strategy:** CloudKit stores persistent couple state, while local caches provide resilience for selected shared text-based data.
-*   **Gameplay Coordination:** Word Search uses deterministic on-device generation plus a shared CloudKit session instead of a heavyweight live multiplayer backend.
+Feature-based **MVVM** with a **protocol-backed service layer**. ViewModels are `@MainActor` and depend on `CloudKitServiceProtocol`, so previews and tests can swap in a mock.
 
 ```mermaid
 graph LR
     View[SwiftUI View] --> VM[ViewModel]
-    VM --> Service[Service Protocol]
+    VM --> Service[Service protocol]
     Service --> CK[CloudKit]
-    Service --> Cache[Local Cache]
-    Service --> Native[iOS Integrations]
-    CK --> Service
-    Cache --> Service
-    Native --> Service
-    Service --> VM
-    VM --> View
+    Service --> Cache[Local cache]
+    Service --> Widget[App Group and Widget]
 ```
 
-### Runtime Flow
-
-At launch, the app creates a single shared `CloudKitService`, injects it into the SwiftUI tree, and uses it as the source of truth for pairing and shared data.
-
-*   **Startup:** request local notification permissions, initialize CloudKit, create the custom record zone if needed, fetch the current user identifier, and check for an existing couple.
-*   **Root routing:** show a loading screen while cloud setup is in progress, onboarding if the user is not paired, and the home dashboard once a valid couple exists.
-*   **Share acceptance:** when the app opens from a CloudKit share URL, it fetches `CKShare.Metadata`, accepts the share, and retries the fetch path to account for CloudKit propagation delay.
-
-```mermaid
-flowchart TD
-    Launch[App Launch] --> Setup["CloudKitService.setup()"]
-    Setup --> Check{Paired couple exists?}
-    Check -->|No| Onboarding[CoupleOnboardingView]
-    Check -->|Yes| Home[HomeView]
-    Share[Incoming share URL] --> Metadata[Fetch CKShare metadata]
-    Metadata --> Accept["acceptShare()"]
-    Accept --> Check
 ```
-
-### Shared Data and Sync Topology
-
-Pekis uses **CloudKit** for persistent relationship data instead of a traditional custom backend.
-
-*   **Private + shared databases:** Partner A owns the original couple record in a custom `CoupleZone`; Partner B joins through `CKShare` and accesses the shared graph through CloudKit's shared database.
-*   **Protocol-driven sync layer:** `CloudKitServiceProtocol` gives ViewModels a stable interface while the concrete `CloudKitService` manages zone creation, record routing, sharing, subscriptions, and error handling.
-*   **Selective local caching:** `Couple`, `LoveNote`, and `ThisOrThatAnswer` can fall back to local cache; this improves resilience without claiming universal offline-first support.
-*   **Push-driven refresh:** CloudKit subscriptions trigger silent pushes, the app delegate forwards them to `CloudKitService`, and feature ViewModels refetch their own data after a notification fan-out.
-
-This yields an architecture that is privacy-conscious, native to the Apple ecosystem, and realistic about mobile sync constraints such as eventual consistency and share-propagation delay.
-
-### Deterministic Shared Gameplay
-
-The Word Search feature is architecturally distinct from the CloudKit-backed record flows.
-
-*   **Deterministic board generation:** both devices generate the same puzzle locally from a shared CloudKit session seed using a custom random-number generator.
-*   **Lightweight session coordination:** a short-lived shared record coordinates readiness, countdown timing, victory signals, and the synced waiting-room state.
-*   **Explicit tradeoff:** the app delivers synchronized play without maintaining a live authoritative game server or syncing per-move board state.
-
-This is a good example of scope-aware systems design: shared experience through local computation rather than infrastructure-heavy realtime state management.
-
-### Repository Structure
-
-```
-Pekis/                # iOS app target
-├── App/              # App entry point, app/scene delegates
-├── Config/           # xcconfig wiring for the local .env
+Pekis/
+├── App/              # Entry point, app and scene delegates
 ├── Core/
-│   ├── Data/         # Curated prompts, quotes, and content pools
-│   ├── DesignSystem/ # Theme, fonts, and card styles
-│   ├── Models/       # Shared domain models and CloudKit mappings
-│   ├── Services/     # CloudKit (split into CloudKitService+*.swift extensions), sharing, matchmaking, puzzles
+│   ├── DesignSystem/ # Theme, fonts, card styles
+│   ├── Models/       # Domain models and their CloudKit mappings
+│   ├── Services/     # CloudKit (split into CloudKitService+*.swift), retry, matchmaking, puzzles
 │   ├── Shared/       # Code compiled into both the app and the widget
 │   └── Utilities/    # Haptics, logging, notifications, configuration
-├── Features/
-│   ├── Home/         # Dashboard and activity features
-│   ├── Mascot/       # Code-drawn animated Peki mascots
-│   ├── Onboarding/   # Couple creation and join flow
-│   └── Settings/
+├── Features/         # Home, Mascot, Onboarding, Settings
 └── Shared/           # Reusable UI components
-PekisWidget/          # WidgetKit countdown extension
-PekisTests/           # Unit tests (Swift Testing + XCTest)
-PekisUITests/         # UI tests
+PekisWidget/          # WidgetKit extension
+PekisTests/           # 49 unit tests (Swift Testing + XCTest)
 ```
 
-## 🚧 Known Limitations
+More detail: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-*   Conflict resolution is last-writer-wins (CloudKit `.changedKeys` save policy), which is acceptable for two-person data.
-*   CloudKit calls have no retry/backoff, so transient network failures surface as errors.
-*   The app does not yet monitor iCloud account changes (for example, signing out while the app is running).
-*   `CloudKitService` itself is not covered by automated tests; record mapping, caching, view-model logic, and Word Search are.
+## Quality
 
-## ✅ Quality Tooling
+- **49 unit tests** run in CI on every push and pull request, without needing iCloud.
+- **SwiftLint** runs in CI and the code base has zero warnings.
+- **Coverage:** about 99% on puzzle generation, 93 to 100% on the retry and account-transition logic, about 64% on models, and about 14% for the whole app target (SwiftUI views make up most of the lines).
+- **Known gap:** the networked CloudKit I/O (share acceptance, record reads and writes) is verified manually on devices, not by unit tests. Decision logic around it is extracted and tested instead.
 
-*   **Testing:** The repository uses both Swift Testing and XCTest, with the strongest automated coverage around CloudKit record mapping, cache behavior, HomeViewModel logic, and word-search generation/selection behavior.
-*   **Linting:** SwiftLint runs from a build-phase script when installed locally and is configured through `.swiftlint.yml`.
-*   **CI:** GitHub Actions runs SwiftLint and the `PekisTests` unit tests on pushes to `main` and pull requests targeting `main`.
-*   **Documentation:** `README.md`, `ARCHITECTURE.md`, and `CONTRIBUTING.md` document the system design, contributor expectations, and quality bar.
+## Privacy
 
----
+Couple data is stored in CloudKit's private and shared databases under the users' own Apple IDs. Nothing is sent to a server I operate. Details in [PRIVACY.md](PRIVACY.md); vulnerability reporting in [SECURITY.md](SECURITY.md).
 
-## 🤝 Contributing
+## Build and run
 
-We welcome contributions! Whether you're fixing a bug, adding a new "Date Idea," or translating the app.
+Requires **Xcode 16+** and an iOS 17+ simulator or device.
 
-1.  Fork the Project.
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4.  Push to the Branch (`git push origin feature/AmazingFeature`).
-5.  Open a Pull Request.
+```bash
+git clone https://github.com/martinnss/pekis.git
+cd pekis
+cp .env.example .env     # then put in your own team ID, bundle ID and CloudKit container
+open Pekis.xcodeproj
+```
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and development process.
+- **Unit tests** need no signing: `⌘U` in Xcode, or see [DEVELOPMENT.md](DEVELOPMENT.md) for the `xcodebuild` command.
+- **Pairing and sync** need a signed build, an iCloud-signed-in simulator or device, and the iCloud/CloudKit capabilities for the identifiers in your `.env`.
+- **Just want to see the UI?** Run an unsigned simulator build with the environment variable `PEKIS_SKIP_CLOUDKIT=1`.
 
-## 🔐 Security and Privacy
+## Known limitations and roadmap
 
-If you discover a vulnerability, follow [SECURITY.md](SECURITY.md) instead of opening a public issue. For implementation and data-handling boundaries, see [PRIVACY.md](PRIVACY.md).
+- **Conflict resolution is last-writer-wins** (acceptable for two people and mostly append-only data). A per-field approach is the next step; see the trade-offs table in the notes.
+- **Writes made offline are not queued.** Only a small read cache exists.
+- **Networked CloudKit paths lack unit tests.** Next step: a thin database protocol with a fake.
 
----
+## Contributing and license
 
-## 📄 License
+Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md). Released under the [MIT License](LICENSE). Changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-*Built with 💜 by Martin for LDR couples everywhere.*
+*Built by [Martin Olivares](https://github.com/martinnss) for long-distance couples everywhere.*
