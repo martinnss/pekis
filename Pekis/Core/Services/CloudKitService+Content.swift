@@ -55,7 +55,14 @@ extension CloudKitService {
         do {
             var notes: [LoveNote] = []
 
-            let results = try await withRetry { try await database.records(matching: query, inZoneWith: zoneID) }
+            let results = try await withRetry {
+                try await database.records(
+                    matching: query,
+                    inZoneWith: zoneID,
+                    desiredKeys: nil,
+                    resultsLimit: CKQueryOperation.maximumResults
+                )
+            }
             for (_, result) in results.matchResults {
                 if case .success(let record) = result,
                    let note = LoveNote(record: record) {
@@ -119,7 +126,14 @@ extension CloudKitService {
         do {
             var answers: [ThisOrThatAnswer] = []
 
-            let results = try await withRetry { try await database.records(matching: query, inZoneWith: zoneID) }
+            let results = try await withRetry {
+                try await database.records(
+                    matching: query,
+                    inZoneWith: zoneID,
+                    desiredKeys: nil,
+                    resultsLimit: CKQueryOperation.maximumResults
+                )
+            }
             for (_, result) in results.matchResults {
                 if case .success(let record) = result,
                    let answer = ThisOrThatAnswer(record: record) {
@@ -197,7 +211,14 @@ extension CloudKitService {
 
         do {
             var moments: [MomentShareRecord] = []
-            let results = try await withRetry { try await database.records(matching: query, inZoneWith: zoneID) }
+            let results = try await withRetry {
+                try await database.records(
+                    matching: query,
+                    inZoneWith: zoneID,
+                    desiredKeys: nil,
+                    resultsLimit: CKQueryOperation.maximumResults
+                )
+            }
             for (_, result) in results.matchResults {
                 if case .success(let record) = result,
                    let moment = MomentShareRecord(record: record) {
