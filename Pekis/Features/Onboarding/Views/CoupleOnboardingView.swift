@@ -213,7 +213,10 @@ private struct CreateOrJoinStepView: View {
         .alert("Join Your Partner", isPresented: $viewModel.showJoinInstructions) {
             Button("Got it", role: .cancel) {}
         } message: {
-            Text("Ask your partner to share their invite link with you in iMessage. Tap the link directly in the message — don't open it in Safari.")
+            Text(
+                "Ask your partner to share their invite link with you in iMessage. "
+                    + "Tap the link directly in the message — don't open it in Safari."
+            )
         }
     }
 

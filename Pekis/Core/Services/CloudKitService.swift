@@ -280,8 +280,8 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             content: content
         )
 
-        // BUG 2 FIX: Use the fetched couple record's actual zone (has correct ownerName
-        // for Partner B, who is in the sharedDatabase). Both partners write to the same
+        // Use the fetched couple record's actual zone (it carries the correct ownerName
+        // for Partner B, who lives in the sharedDatabase). Both partners write to the same
         // zone — Partner A via privateDatabase, Partner B via sharedDatabase.
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
         let record = note.toRecord(in: zoneID)
@@ -303,7 +303,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
         let query = CKQuery(recordType: LoveNote.recordType, predicate: predicate)
         query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
 
-        // BUG 2 FIX: Must specify inZoneWith — records(matching:) without a zone only
+        // Must specify inZoneWith — records(matching:) without a zone only
         // searches the DEFAULT zone, not our custom CoupleZone. Also route to the
         // correct database (private for Partner A, shared for Partner B). All records
         // for both partners live in Partner A's zone, so one database fetch is enough.
@@ -350,7 +350,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
             selectedOption: selectedOption
         )
 
-        // BUG 2 FIX: same zone routing as sendLoveNote
+        // Same zone routing as sendLoveNote.
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
         let record = answer.toRecord(in: zoneID)
         let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
@@ -370,7 +370,7 @@ final class CloudKitService: ObservableObject, CloudKitServiceProtocol {
         let predicate = NSPredicate(format: "coupleID == %@", couple.id)
         let query = CKQuery(recordType: ThisOrThatAnswer.recordType, predicate: predicate)
 
-        // BUG 2 FIX: same zone + database routing as fetchLoveNotes
+        // Same zone + database routing as fetchLoveNotes.
         let zoneID = coupleRecord?.recordID.zoneID ?? coupleZoneID
         let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDatabase : sharedDatabase
 
@@ -587,7 +587,7 @@ extension CloudKitService {
     }
 
     func subscribeToChanges() async throws {
-        // BUG 3 FIX: subscribe to BOTH databases.
+        // Subscribe to BOTH databases.
         // Partner A receives changes in their private database (from Partner B's writes to the shared zone).
         // Partner B receives changes in the shared database (from Partner A's writes to their zone).
         await subscribeDatabase(privateDatabase, subscriptionID: "pekis-private-changes")
@@ -603,7 +603,7 @@ extension CloudKitService {
         notificationInfo.shouldSendContentAvailable = true // Silent push — no visible banner
         subscription.notificationInfo = notificationInfo
 
-        try? await database.save(subscription)
+        _ = try? await database.save(subscription)
     }
 
     func handleNotification(userInfo: [AnyHashable: Any]) async {

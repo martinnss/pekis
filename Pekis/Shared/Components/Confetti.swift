@@ -89,6 +89,6 @@ struct FloatingHearts: View {
         }
         .allowsHitTesting(false)
         .onAppear { if active { animate = true } }
-        .onChange(of: active) { newValue in animate = newValue }
+        .onChange(of: active) { _, newValue in animate = newValue }
     }
 }

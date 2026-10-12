@@ -21,7 +21,7 @@ struct WordSearchGameView: View {
         .onAppear {
             didReportResult = false
         }
-        .onChange(of: viewModel.allWordsFound) { completed in
+        .onChange(of: viewModel.allWordsFound) { _, completed in
             if completed {
                 viewModel.stopGame()
                 handleCompletionIfNeeded(force: true)

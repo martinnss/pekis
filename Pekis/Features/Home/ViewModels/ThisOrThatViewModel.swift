@@ -18,7 +18,7 @@ final class ThisOrThatViewModel: ObservableObject {
     init(cloudKitService: any CloudKitServiceProtocol) {
         self.cloudKitService = cloudKitService
 
-        // BUG 4 FIX: refresh answers when a CloudKit push arrives
+        // Refresh answers whenever a CloudKit push arrives.
         notificationObserver = NotificationCenter.default.addObserver(
             forName: .pekisCloudKitDataChanged,
             object: nil,

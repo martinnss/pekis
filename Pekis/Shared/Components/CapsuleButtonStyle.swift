@@ -33,7 +33,7 @@ struct CapsuleButtonStyle: ButtonStyle {
             .offset(y: pressed ? 3 : 0)
             .scaleEffect(pressed ? 0.97 : 1)
             .animation(.spring(response: 0.28, dampingFraction: 0.55), value: pressed)
-            .onChange(of: pressed) { isPressed in
+            .onChange(of: pressed) { _, isPressed in
                 if isPressed { HapticManager.impact(style: .medium) }
             }
     }

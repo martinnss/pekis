@@ -99,7 +99,6 @@ struct ShareLinkView: View {
     @State private var showCopiedToast = false
 
     private var inviteMessage: String {
-        // BUG 5 FIX: removed fake App Store placeholder URL
         """
         Hey! Let's stay connected on Pekis 💜
 

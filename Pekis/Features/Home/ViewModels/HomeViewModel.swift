@@ -44,7 +44,6 @@ final class HomeViewModel: ObservableObject {
 
     var inviteMessage: String {
         guard let url = shareURL else { return "" }
-        // BUG 5 FIX: removed fake App Store placeholder URL
         return """
         Hey! Let's connect on Pekis ❤️
 

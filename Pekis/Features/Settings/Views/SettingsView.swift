@@ -45,7 +45,10 @@ struct SettingsView: View {
                             .buttonStyle(ScaleButtonStyle())
                             .disabled(isDisconnecting)
 
-                            Text("Permanently disconnects you from your partner and erases all shared data for both of you. You'll both start over from scratch. This can't be undone.")
+                            Text(
+                                "Permanently disconnects you from your partner and erases all shared data for both of you. "
+                                    + "You'll both start over from scratch. This can't be undone."
+                            )
                                 .font(PekisFont.caption())
                                 .foregroundStyle(.pekisInkSoft)
                         }

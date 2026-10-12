@@ -3,8 +3,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-/// BUG 1 FIX: complete rewrite. Previously this was a stub that never touched CloudKit.
-/// Now it uploads photos as CKAsset and fetches both partners' today moments.
+/// Uploads the daily photo as a `CKAsset` and fetches both partners' moments for today.
 @MainActor
 final class MomentShareViewModel: ObservableObject {
     // MARK: - Published State
@@ -41,7 +40,7 @@ final class MomentShareViewModel: ObservableObject {
             prompt = AppContent.momentPrompts[hourIndex]
         }
 
-        // BUG 4 extension: also refresh moments on CloudKit push
+        // Refresh moments whenever a CloudKit push arrives.
         notificationObserver = NotificationCenter.default.addObserver(
             forName: .pekisCloudKitDataChanged,
             object: nil,

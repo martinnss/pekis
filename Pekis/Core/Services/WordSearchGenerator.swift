@@ -110,10 +110,8 @@ enum WordSearchGenerator {
     private static func fillEmptySlots(in grid: inout [[String]], using rng: inout LinearCongruentialGenerator) {
         let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map { String($0) }
         for rowIndex in grid.indices {
-            for columnIndex in grid[rowIndex].indices {
-                if grid[rowIndex][columnIndex].isEmpty {
-                    grid[rowIndex][columnIndex] = letters.randomElement(using: &rng) ?? "A"
-                }
+            for columnIndex in grid[rowIndex].indices where grid[rowIndex][columnIndex].isEmpty {
+                grid[rowIndex][columnIndex] = letters.randomElement(using: &rng) ?? "A"
             }
         }
     }

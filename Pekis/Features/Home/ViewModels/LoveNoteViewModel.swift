@@ -17,7 +17,7 @@ final class LoveNoteViewModel: ObservableObject {
     init(cloudKitService: any CloudKitServiceProtocol) {
         self.cloudKitService = cloudKitService
 
-        // BUG 4 FIX: listen for CloudKit push notifications and refresh notes.
+        // Refresh notes whenever a CloudKit push arrives.
         // handleNotification() in CloudKitService posts this after receiving a silent push.
         notificationObserver = NotificationCenter.default.addObserver(
             forName: .pekisCloudKitDataChanged,
@@ -75,7 +75,6 @@ final class LoveNoteViewModel: ObservableObject {
         do {
             receivedNotes = try await cloudKitService.fetchLoveNotes()
         } catch {
-            // BUG 6 FIX: was setting errorMessage but never showing the alert.
             errorMessage = error.localizedDescription
             showError = true
         }
