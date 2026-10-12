@@ -9,7 +9,7 @@
 
 > **Technical Overview:** Pekis uses feature-based MVVM, structured concurrency (`async/await`), CloudKit sharing for persistent couple data, and lightweight deterministic coordination for shared gameplay.
 
-Repository docs: [ARCHITECTURE.md](ARCHITECTURE.md), [DEVELOPMENT.md](DEVELOPMENT.md), [CONTRIBUTING.md](CONTRIBUTING.md), [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md), [GitHub About setup](docs/GITHUB_ABOUT.md).
+Repository docs: [ARCHITECTURE.md](ARCHITECTURE.md), [DEVELOPMENT.md](DEVELOPMENT.md), [CONTRIBUTING.md](CONTRIBUTING.md), [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -32,6 +32,7 @@ Long-distance relationships are hard. Texting isn't always enough. Pekis aims to
 *   **🗣️ Topic Generator:** Conversation starters drawn from a built-in prompt library.
 *   **🧩 Word Search:** A synchronized puzzle experience where both devices generate the same board from a shared session seed, with CloudKit-backed ready/start coordination.
 *   **⚖️ This or That:** A compatibility game that stores both partners' answers and reveals matches over time.
+*   **⏳ Countdown Widget:** Home Screen and Lock Screen widgets counting down to your next reunion, configurable via App Intents.
 
 ---
 
@@ -59,14 +60,13 @@ Pekis is built around **CloudKit-backed couple data with selective local caching
 *   **Selective Local Cache:** Couple state, notes, and answer history can fall back to cached local data when cloud fetches fail.
 *   **Deterministic Shared Play:** Word Search synchronizes the board through on-device generation from a shared seed rather than a live shared-state game server.
 *   **Shared Session Coordination:** Word Search uses a short-lived CloudKit session record for ready state, countdown timing, and winner detection; it is not a peer-to-peer transport layer.
-*   **Publish-Ready Repo Surface:** Security reporting, privacy boundaries, contribution rules, and development setup are documented in-repo for external contributors.
 
 ---
 
 ## 🛠 How to Build
 
 ### Prerequisites
-*   Xcode 15.0+
+*   Xcode 16.0+
 *   iOS 17.0+ Simulator or Device
 
 ### Installation
@@ -166,24 +166,39 @@ This is a good example of scope-aware systems design: shared experience through 
 ### Repository Structure
 
 ```
-Pekis/
-├── App/              # App entry point and lifecycle bootstrapping
+Pekis/                # iOS app target
+├── App/              # App entry point, app/scene delegates
+├── Config/           # xcconfig wiring for the local .env
 ├── Core/
 │   ├── Data/         # Curated prompts, quotes, and content pools
+│   ├── DesignSystem/ # Theme, fonts, and card styles
 │   ├── Models/       # Shared domain models and CloudKit mappings
 │   ├── Services/     # CloudKit, sharing, matchmaking, puzzle generation
-│   └── Utilities/    # Haptics and local notifications
+│   ├── Shared/       # Code compiled into both the app and the widget
+│   └── Utilities/    # Haptics, logging, notifications, configuration
 ├── Features/
 │   ├── Home/         # Dashboard and activity features
-│   └── Onboarding/   # Couple creation and join flow
+│   ├── Mascot/       # Code-drawn animated Peki mascots
+│   ├── Onboarding/   # Couple creation and join flow
+│   └── Settings/
 └── Shared/           # Reusable UI components
+PekisWidget/          # WidgetKit countdown extension
+PekisTests/           # Unit tests (Swift Testing + XCTest)
+PekisUITests/         # UI tests
 ```
+
+## 🚧 Known Limitations
+
+*   Conflict resolution is last-writer-wins (CloudKit `.changedKeys` save policy), which is acceptable for two-person data.
+*   CloudKit calls have no retry/backoff, so transient network failures surface as errors.
+*   The app does not yet monitor iCloud account changes (for example, signing out while the app is running).
+*   `CloudKitService` itself is not covered by automated tests; record mapping, caching, view-model logic, and Word Search are.
 
 ## ✅ Quality Tooling
 
 *   **Testing:** The repository uses both Swift Testing and XCTest, with the strongest automated coverage around CloudKit record mapping, cache behavior, HomeViewModel logic, and word-search generation/selection behavior.
 *   **Linting:** SwiftLint runs from a build-phase script when installed locally and is configured through `.swiftlint.yml`.
-*   **CI:** GitHub Actions performs build-and-test verification on pushes to `main` and pull requests targeting `main`.
+*   **CI:** GitHub Actions runs SwiftLint and the `PekisTests` unit tests on pushes to `main` and pull requests targeting `main`.
 *   **Documentation:** `README.md`, `ARCHITECTURE.md`, and `CONTRIBUTING.md` document the system design, contributor expectations, and quality bar.
 
 ---
