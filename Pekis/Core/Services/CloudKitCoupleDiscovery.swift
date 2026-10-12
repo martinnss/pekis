@@ -25,7 +25,9 @@ enum CloudKitCoupleDiscovery {
 
             let results = try await configuration.privateDatabase.records(
                 matching: query,
-                inZoneWith: configuration.coupleZoneID
+                inZoneWith: configuration.coupleZoneID,
+                desiredKeys: nil,
+                resultsLimit: CKQueryOperation.maximumResults
             )
 
             for (_, result) in results.matchResults {
@@ -79,7 +81,9 @@ enum CloudKitCoupleDiscovery {
 
                 let results = try await configuration.sharedDatabase.records(
                     matching: query,
-                    inZoneWith: zone.zoneID
+                    inZoneWith: zone.zoneID,
+                    desiredKeys: nil,
+                    resultsLimit: CKQueryOperation.maximumResults
                 )
 
                 for (_, result) in results.matchResults {

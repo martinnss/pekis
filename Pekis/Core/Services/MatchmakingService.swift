@@ -9,6 +9,7 @@ enum MatchStatus {
     case inGame
 }
 
+@MainActor
 protocol MatchmakingServiceProtocol {
     var status: CurrentValueSubject<MatchStatus, Never> { get }
     var opponentWon: PassthroughSubject<Void, Never> { get }
@@ -21,23 +22,26 @@ protocol MatchmakingServiceProtocol {
 // MARK: - Simulation Service
 
 /// Local stand-in used for solo play and whenever no paired CloudKit couple is available.
+@MainActor
 class SimulationMatchmakingService: MatchmakingServiceProtocol {
     var status = CurrentValueSubject<MatchStatus, Never>(.idle)
     var opponentWon = PassthroughSubject<Void, Never>()
     var session = CurrentValueSubject<WordSearchSession?, Never>(nil)
-    private var timer: Timer?
+    private var joinTask: Task<Void, Never>?
 
     func joinGame() {
         status.send(.waitingForOpponent)
 
         // Simulate opponent joining after 2 seconds
-        timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+        joinTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
             self?.status.send(.readyToStart)
         }
     }
 
     func leaveGame() {
-        timer?.invalidate()
+        joinTask?.cancel()
         session.send(nil)
         status.send(.idle)
     }
@@ -49,6 +53,7 @@ class SimulationMatchmakingService: MatchmakingServiceProtocol {
 
 // MARK: - CloudKit Service
 
+@MainActor
 final class CloudKitCoupleMatchmakingService: MatchmakingServiceProtocol {
     var status = CurrentValueSubject<MatchStatus, Never>(.idle)
     var opponentWon = PassthroughSubject<Void, Never>()

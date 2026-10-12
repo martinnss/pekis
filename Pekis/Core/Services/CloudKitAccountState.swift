@@ -2,7 +2,7 @@ import CloudKit
 import Foundation
 
 /// What the app should do after the iCloud account changes underneath it.
-enum AccountTransition: Equatable {
+nonisolated enum AccountTransition: Equatable {
     /// Nothing to do (same account, or the new account's identity isn't known yet).
     case unchanged
     /// iCloud is unavailable (signed out, restricted, or no account): keep cached data and tell the user.
@@ -24,7 +24,7 @@ enum AccountTransition: Equatable {
 ///
 /// Partner A owns the couple zone (private database). Partner B reaches the same zone through
 /// the shared database, where the zone's owner is Partner A rather than the current user.
-enum CoupleDatabaseScope: Equatable {
+nonisolated enum CoupleDatabaseScope: Equatable {
     case privateDatabase
     case sharedDatabase
 

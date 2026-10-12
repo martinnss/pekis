@@ -2,7 +2,7 @@ import CloudKit
 import Foundation
 
 /// Exponential-backoff settings for transient CloudKit failures.
-struct RetryPolicy: Equatable {
+nonisolated struct RetryPolicy: Equatable {
     var maxAttempts: Int
     var baseDelay: TimeInterval
     var maxDelay: TimeInterval
@@ -15,7 +15,7 @@ struct RetryPolicy: Equatable {
 ///
 /// Only errors CloudKit documents as safe to retry are retried; conflicts, permission and
 /// validation errors surface immediately so callers can handle them.
-enum CloudKitRetry {
+nonisolated enum CloudKitRetry {
     /// Whether a failed operation is worth attempting again.
     static func isRetryable(_ error: Error) -> Bool {
         guard let ckError = error as? CKError else { return false }
